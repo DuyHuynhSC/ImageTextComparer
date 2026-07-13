@@ -300,18 +300,20 @@
                                     <TextBlock Text="Dùng chuột quét vùng để trích xuất tập trung" Foreground="{DynamicResource TextLabelFg}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                                 
-                                <!-- Center-aligned grid that matches the rendered image viewport exactly -->
-                                <Grid x:Name="GridImage1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Image x:Name="Img1" Stretch="Uniform"/>
-                                    
-                                    <Canvas x:Name="Canvas1" Background="Transparent" 
-                                            Cursor="Cross"
-                                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
-                                            MouseMove="Canvas_MouseMove"
-                                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
-                                        <Rectangle x:Name="RectSelection1" Stroke="#6366F1" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E6366F1" Visibility="Collapsed"/>
-                                    </Canvas>
-                                </Grid>
+                                <!-- Center-aligned Viewbox that scales the pixel-bound grid natively -->
+                                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Grid x:Name="GridImage1">
+                                        <Image x:Name="Img1" Stretch="None"/>
+                                        
+                                        <Canvas x:Name="Canvas1" Background="Transparent" 
+                                                Cursor="Cross"
+                                                MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                                MouseMove="Canvas_MouseMove"
+                                                MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+                                            <Rectangle x:Name="RectSelection1" Stroke="#6366F1" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E6366F1" Visibility="Collapsed"/>
+                                        </Canvas>
+                                    </Grid>
+                                </Viewbox>
                             </Grid>
                         </Border>
 
@@ -345,18 +347,20 @@
                                     <TextBlock Text="Dùng chuột quét vùng để trích xuất tập trung" Foreground="{DynamicResource TextLabelFg}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                                 
-                                <!-- Center-aligned grid that matches the rendered image viewport exactly -->
-                                <Grid x:Name="GridImage2" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Image x:Name="Img2" Stretch="Uniform"/>
-                                    
-                                    <Canvas x:Name="Canvas2" Background="Transparent" 
-                                            Cursor="Cross"
-                                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
-                                            MouseMove="Canvas_MouseMove"
-                                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
-                                        <Rectangle x:Name="RectSelection2" Stroke="#8B5CF6" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E8B5CF6" Visibility="Collapsed"/>
-                                    </Canvas>
-                                </Grid>
+                                <!-- Center-aligned Viewbox that scales the pixel-bound grid natively -->
+                                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Grid x:Name="GridImage2">
+                                        <Image x:Name="Img2" Stretch="None"/>
+                                        
+                                        <Canvas x:Name="Canvas2" Background="Transparent" 
+                                                Cursor="Cross"
+                                                MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                                MouseMove="Canvas_MouseMove"
+                                                MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+                                            <Rectangle x:Name="RectSelection2" Stroke="#8B5CF6" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E8B5CF6" Visibility="Collapsed"/>
+                                        </Canvas>
+                                    </Grid>
+                                </Viewbox>
                             </Grid>
                         </Border>
 

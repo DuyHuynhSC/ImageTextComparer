@@ -147,6 +147,15 @@ namespace ImageTextComparer
                     Placeholder1.Visibility = Visibility.Collapsed;
                     TxtInfo1.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | File: {System.IO.Path.GetFileName(dialog.FileName)}";
 
+                    // Bind dimensions to image pixel size for native Viewbox scaling
+                    GridImage1.Width = bitmap.PixelWidth;
+                    GridImage1.Height = bitmap.PixelHeight;
+                    Canvas1.Width = bitmap.PixelWidth;
+                    Canvas1.Height = bitmap.PixelHeight;
+                    Img1.Width = bitmap.PixelWidth;
+                    Img1.Height = bitmap.PixelHeight;
+                    RectSelection1.StrokeThickness = Math.Max(1.5, bitmap.PixelWidth / 200.0);
+
                     ClearCropSelection(1);
                 }
                 catch (Exception ex)
@@ -180,6 +189,15 @@ namespace ImageTextComparer
                     Img2.Source = bitmap;
                     Placeholder2.Visibility = Visibility.Collapsed;
                     TxtInfo2.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | File: {System.IO.Path.GetFileName(dialog.FileName)}";
+
+                    // Bind dimensions to image pixel size for native Viewbox scaling
+                    GridImage2.Width = bitmap.PixelWidth;
+                    GridImage2.Height = bitmap.PixelHeight;
+                    Canvas2.Width = bitmap.PixelWidth;
+                    Canvas2.Height = bitmap.PixelHeight;
+                    Img2.Width = bitmap.PixelWidth;
+                    Img2.Height = bitmap.PixelHeight;
+                    RectSelection2.StrokeThickness = Math.Max(1.5, bitmap.PixelWidth / 200.0);
 
                     ClearCropSelection(2);
                 }
@@ -352,7 +370,7 @@ namespace ImageTextComparer
 
         #region Coordinate Mapping and Cropping
 
-        private byte[] GetProcessedImageBytes(BitmapSource original, Rect uiRect, double controlWidth, double controlHeight)
+        private byte[] GetProcessedImageBytes(BitmapSource original, Rect uiRect)
         {
             BitmapSource finalSource = original;
 
@@ -361,32 +379,26 @@ namespace ImageTextComparer
                 double pixelWidth = original.PixelWidth;
                 double pixelHeight = original.PixelHeight;
 
-                if (controlWidth > 0 && controlHeight > 0)
+                // Coordinates are already mapped 1-to-1 to pixels thanks to Viewbox layout scaling
+                double cropX = uiRect.X;
+                double cropY = uiRect.Y;
+                double cropW = uiRect.Width;
+                double cropH = uiRect.Height;
+
+                // Clamp to image boundaries just to prevent rounding errors
+                cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
+                cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
+                cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
+                cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
+
+                try
                 {
-                    // Map UI coordinates directly to raw pixels (no offset subtractions needed!)
-                    double scaleX = pixelWidth / controlWidth;
-                    double scaleY = pixelHeight / controlHeight;
-
-                    double cropX = uiRect.X * scaleX;
-                    double cropY = uiRect.Y * scaleY;
-                    double cropW = uiRect.Width * scaleX;
-                    double cropH = uiRect.Height * scaleY;
-
-                    // Clamp to image boundaries just to prevent rounding errors
-                    cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
-                    cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
-                    cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
-                    cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
-
-                    try
-                    {
-                        finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
-                        finalSource = original;
-                    }
+                    finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
+                    finalSource = original;
                 }
             }
 
@@ -441,14 +453,8 @@ namespace ImageTextComparer
                 // 1. Prepare image bytes
                 TxtStatus.Text = "Chuẩn bị hình ảnh và cắt vùng quét...";
                 
-                // Get control dimensions on the UI thread to avoid thread affinity exception
-                double w1 = Img1.ActualWidth;
-                double h1 = Img1.ActualHeight;
-                double w2 = Img2.ActualWidth;
-                double h2 = Img2.ActualHeight;
-
-                byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1, w1, h1));
-                byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2, w2, h2));
+                byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1));
+                byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2));
 
                 // Save cropped images locally for diagnostics (saved as crop_debug_1.png and crop_debug_2.png)
                 try
