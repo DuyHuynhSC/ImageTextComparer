@@ -214,7 +214,7 @@
 
                         <TextBlock Text="API Endpoint URL" Style="{StaticResource ModernLabel}"/>
                         <TextBox x:Name="TxtEndpoint" Style="{StaticResource ConfigTextBox}" 
-                                 Text="http://localhost:11434/v1/chat/completions" Margin="0,0,0,14"/>
+                                 Text="https://models-gateway.fujinet.net/v1/chat/completions" Margin="0,0,0,14"/>
 
                         <TextBlock Text="API Key (nếu có)" Style="{StaticResource ModernLabel}"/>
                         <TextBox x:Name="TxtApiKey" Style="{StaticResource ConfigTextBox}" 
@@ -222,7 +222,7 @@
 
                         <TextBlock Text="Model Name" Style="{StaticResource ModernLabel}"/>
                         <TextBox x:Name="TxtModelName" Style="{StaticResource ConfigTextBox}" 
-                                 Text="qwen2.5-vl" Margin="0,0,0,14"/>
+                                 Text="programmer" Margin="0,0,0,14"/>
 
                         <CheckBox x:Name="ChkBypassSsl" Content="Bỏ qua xác thực SSL (tự ký)" 
                                   Foreground="{DynamicResource TextLabelFg}" FontSize="12" Margin="0,0,0,14" VerticalAlignment="Center"/>

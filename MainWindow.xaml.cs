@@ -86,10 +86,27 @@ namespace ImageTextComparer
                         TxtPrompt.Text = config.Prompt;
                         ChkBypassSsl.IsChecked = config.BypassSsl;
 
+                        bool upgraded = false;
+                        if (config.Endpoint == "http://localhost:11434/v1/chat/completions" || string.IsNullOrEmpty(config.Endpoint))
+                        {
+                            TxtEndpoint.Text = "https://models-gateway.fujinet.net/v1/chat/completions";
+                            upgraded = true;
+                        }
+                        if (config.ModelName == "qwen2.5-vl" || config.ModelName == "qwen-vl" || string.IsNullOrEmpty(config.ModelName))
+                        {
+                            TxtModelName.Text = "programmer";
+                            upgraded = true;
+                        }
+
                         // Auto-upgrade prompt if it's the old prompt (doesn't contain space separation instruction)
                         if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("Extract each character"))
                         {
-                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
+                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字 của間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。".Replace("文字と文字 của間に", "文字と文字の間に");
+                            upgraded = true;
+                        }
+
+                        if (upgraded)
+                        {
                             SaveConfig();
                         }
                     }
@@ -131,9 +148,9 @@ namespace ImageTextComparer
 
         private void BtnResetConfig_Click(object sender, RoutedEventArgs e)
         {
-            TxtEndpoint.Text = "http://localhost:11434/v1/chat/completions";
+            TxtEndpoint.Text = "https://models-gateway.fujinet.net/v1/chat/completions";
             TxtApiKey.Text = "";
-            TxtModelName.Text = "qwen2.5-vl";
+            TxtModelName.Text = "programmer";
             TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
