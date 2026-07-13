@@ -10,7 +10,16 @@ namespace ImageTextComparer
 {
     public static class VisionApiService
     {
-        private static readonly HttpClient _httpClient = new HttpClient();
+        public static bool BypassSslValidation { get; set; } = false;
+
+        private static readonly HttpClient _httpClient = new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) =>
+            {
+                if (BypassSslValidation) return true;
+                return sslPolicyErrors == System.Net.Security.SslPolicyErrors.None;
+            }
+        });
 
         /// <summary>
         /// Sends an image to the OpenAI-compatible Vision API and returns the extracted text.

@@ -39,6 +39,7 @@ namespace ImageTextComparer
             public string ApiKey { get; set; } = string.Empty;
             public string ModelName { get; set; } = string.Empty;
             public string Prompt { get; set; } = string.Empty;
+            public bool BypassSsl { get; set; } = false;
         }
 
         public MainWindow()
@@ -69,6 +70,7 @@ namespace ImageTextComparer
                         TxtApiKey.Text = config.ApiKey;
                         TxtModelName.Text = config.ModelName;
                         TxtPrompt.Text = config.Prompt;
+                        ChkBypassSsl.IsChecked = config.BypassSsl;
                     }
                 }
             }
@@ -87,7 +89,8 @@ namespace ImageTextComparer
                     Endpoint = TxtEndpoint.Text.Trim(),
                     ApiKey = TxtApiKey.Text.Trim(),
                     ModelName = TxtModelName.Text.Trim(),
-                    Prompt = TxtPrompt.Text
+                    Prompt = TxtPrompt.Text,
+                    BypassSsl = ChkBypassSsl.IsChecked ?? false
                 };
 
                 string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
@@ -111,6 +114,7 @@ namespace ImageTextComparer
             TxtApiKey.Text = "";
             TxtModelName.Text = "qwen2.5-vl";
             TxtPrompt.Text = "Hãy trích xuất chính xác toàn bộ văn bản có trong hình ảnh này. Chỉ trả về kết quả văn bản được trích xuất, giữ nguyên bố cục dòng cột nếu có. Không giải thích hay thêm bớt thông tin.";
+            ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }
 
@@ -435,6 +439,9 @@ namespace ImageTextComparer
             string modelName = TxtModelName.Text.Trim();
             string prompt = TxtPrompt.Text;
 
+            // Apply SSL bypass setting
+            VisionApiService.BypassSslValidation = ChkBypassSsl.IsChecked ?? false;
+
             // UI feedback
             BtnCompare.IsEnabled = false;
             TxtStatus.Text = "Đang xử lý...";
@@ -479,7 +486,7 @@ namespace ImageTextComparer
             catch (Exception ex)
             {
                 TxtStatus.Text = "Lỗi xử lý!";
-                string details = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                string details = GetFullExceptionMessage(ex);
                 MessageBox.Show($"Xảy ra lỗi trong quá trình xử lý:\n{details}", "Lỗi hệ thống", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -533,6 +540,18 @@ namespace ImageTextComparer
             {
                 RichTextBoxHelper.RenderDiff(RtfText1, RtfText2, _lastDiffs, _isDarkTheme);
             }
+        }
+
+        private string GetFullExceptionMessage(Exception ex)
+        {
+            var messages = new System.Collections.Generic.List<string>();
+            var current = ex;
+            while (current != null)
+            {
+                messages.Add(current.Message);
+                current = current.InnerException;
+            }
+            return string.Join("\n--> ", messages);
         }
 
         #endregion

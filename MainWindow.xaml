@@ -217,6 +217,9 @@
                     <TextBox x:Name="TxtModelName" Style="{StaticResource ConfigTextBox}" 
                              Text="qwen2.5-vl" Margin="0,0,0,14"/>
 
+                    <CheckBox x:Name="ChkBypassSsl" Content="Bỏ qua xác thực SSL (tự ký)" 
+                              Foreground="{DynamicResource TextLabelFg}" FontSize="12" Margin="0,0,0,14" VerticalAlignment="Center"/>
+
                     <TextBlock Text="AI Prompts" Style="{StaticResource ModernLabel}"/>
                     <TextBox x:Name="TxtPrompt" Style="{StaticResource ConfigTextBox}" 
                              AcceptsReturn="True" TextWrapping="Wrap" Height="100" VerticalScrollBarVisibility="Auto"
