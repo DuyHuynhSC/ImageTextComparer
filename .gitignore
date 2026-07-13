@@ -1,0 +1,21 @@
+## Visual Studio / dotnet Build Outputs
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio Project-specific files
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+## User Configurations
+config.json
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
