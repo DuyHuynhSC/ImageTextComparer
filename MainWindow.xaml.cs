@@ -384,30 +384,36 @@ namespace ImageTextComparer
                         offsetY = (controlHeight - renderedHeight) / 2.0;
                     }
 
-                    // Map UI coordinates to raw pixels
-                    double scaleX = pixelWidth / renderedWidth;
-                    double scaleY = pixelHeight / renderedHeight;
+                    // Intersect selection rect with the actual rendered image bounds in UI space
+                    var imageRect = new Rect(offsetX, offsetY, renderedWidth, renderedHeight);
+                    uiRect.Intersect(imageRect);
 
-                    double cropX = (uiRect.X - offsetX) * scaleX;
-                    double cropY = (uiRect.Y - offsetY) * scaleY;
-                    double cropW = uiRect.Width * scaleX;
-                    double cropH = uiRect.Height * scaleY;
-
-                    // Clamp to image boundaries
-                    cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
-                    cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
-                    cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
-                    cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
-
-                    try
+                    if (!uiRect.IsEmpty && uiRect.Width > 0 && uiRect.Height > 0)
                     {
-                        finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
-                        // Fallback to original if crop fails
-                        finalSource = original;
+                        // Map UI coordinates to raw pixels
+                        double scaleX = pixelWidth / renderedWidth;
+                        double scaleY = pixelHeight / renderedHeight;
+
+                        double cropX = (uiRect.X - offsetX) * scaleX;
+                        double cropY = (uiRect.Y - offsetY) * scaleY;
+                        double cropW = uiRect.Width * scaleX;
+                        double cropH = uiRect.Height * scaleY;
+
+                        // Clamp to image boundaries
+                        cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
+                        cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
+                        cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
+                        cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
+
+                        try
+                        {
+                            finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
+                            finalSource = original;
+                        }
                     }
                 }
             }
@@ -471,6 +477,18 @@ namespace ImageTextComparer
 
                 byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1, w1, h1));
                 byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2, w2, h2));
+
+                // Save cropped images locally for diagnostics (saved as crop_debug_1.png and crop_debug_2.png)
+                try
+                {
+                    string debugDir = AppDomain.CurrentDomain.BaseDirectory;
+                    File.WriteAllBytes(System.IO.Path.Combine(debugDir, "crop_debug_1.png"), imgBytes1);
+                    File.WriteAllBytes(System.IO.Path.Combine(debugDir, "crop_debug_2.png"), imgBytes2);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Không thể lưu ảnh debug: {ex.Message}");
+                }
 
                 // 2. Call Vision API (concurrently to save time)
                 TxtStatus.Text = "AI đang trích xuất văn bản (đang gửi API)...";
