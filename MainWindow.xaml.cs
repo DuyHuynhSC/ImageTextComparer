@@ -113,7 +113,7 @@ namespace ImageTextComparer
             TxtEndpoint.Text = "http://localhost:11434/v1/chat/completions";
             TxtApiKey.Text = "";
             TxtModelName.Text = "qwen2.5-vl";
-            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy.\nĐặc biệt lưu ý:\n1. Đọc chính xác từng nét chữ, không tự động sửa lỗi chính tả hay tự hoàn thành từ theo ngữ cảnh.\n2. Với tiếng Nhật, phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không nhầm lẫn giữa chúng.\n3. Chỉ trả về kết quả văn bản được trích xuất.";
+            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy. Phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không tự sửa lỗi chính tả theo ngữ cảnh.\n\n画像からテキストを正確に抽出（OCR）してください。文脈による自動修正は一切行わないでください。特に日本語の濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別し、見たままの文字を出力してください。";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }

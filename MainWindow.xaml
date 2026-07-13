@@ -223,7 +223,7 @@
                     <TextBlock Text="AI Prompts" Style="{StaticResource ModernLabel}"/>
                     <TextBox x:Name="TxtPrompt" Style="{StaticResource ConfigTextBox}" 
                              AcceptsReturn="True" TextWrapping="Wrap" Height="100" VerticalScrollBarVisibility="Auto"
-                             Text="Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy.&#x0a;Đặc biệt lưu ý:&#x0a;1. Đọc chính xác từng nét chữ, không tự động sửa lỗi chính tả hay tự hoàn thành từ theo ngữ cảnh.&#x0a;2. Với tiếng Nhật, phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không nhầm lẫn giữa chúng.&#x0a;3. Chỉ trả về kết quả văn bản được trích xuất." 
+                             Text="Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy. Phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không tự sửa lỗi chính tả theo ngữ cảnh.&#x0a;&#x0a;画像からテキストを正確に抽出（OCR）してください。文脈による自動修正は一切行わないでください。特に日本語の濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別し、見たままの文字を出力してください。" 
                              Margin="0,0,0,20"/>
 
                     <Button Content="Lưu cấu hình" Style="{StaticResource ActionButton}" Click="BtnSaveConfig_Click" Margin="0,0,0,10"/>
