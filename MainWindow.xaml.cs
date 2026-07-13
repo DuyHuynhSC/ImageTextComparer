@@ -71,6 +71,13 @@ namespace ImageTextComparer
                         TxtModelName.Text = config.ModelName;
                         TxtPrompt.Text = config.Prompt;
                         ChkBypassSsl.IsChecked = config.BypassSsl;
+
+                        // Auto-upgrade prompt if it's the old prompt (doesn't contain Japanese instructions)
+                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("画像からテキスト"))
+                        {
+                            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy. Phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không tự sửa lỗi chính tả theo ngữ cảnh.\n\n画像からテキストを正確に抽出（OCR）してください。文脈による自動修正は一切行わないでください。特に日本語の濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別し、見たままの文字を出力してください。";
+                            SaveConfig();
+                        }
                     }
                 }
             }
@@ -469,7 +476,9 @@ namespace ImageTextComparer
                 }
 
                 // 2. Call Vision API (concurrently to save time)
-                TxtStatus.Text = "AI đang trích xuất văn bản (đang gửi API)...";
+                string cropDetail1 = _selectionRect1.IsEmpty ? "Toàn bộ" : $"Cắt {(int)_selectionRect1.Width}x{(int)_selectionRect1.Height}";
+                string cropDetail2 = _selectionRect2.IsEmpty ? "Toàn bộ" : $"Cắt {(int)_selectionRect2.Width}x{(int)_selectionRect2.Height}";
+                TxtStatus.Text = $"AI đang trích xuất... (Ảnh 1: {cropDetail1}, Ảnh 2: {cropDetail2})";
                 
                 var task1 = VisionApiService.ExtractTextAsync(endpoint, apiKey, modelName, prompt, imgBytes1);
                 var task2 = VisionApiService.ExtractTextAsync(endpoint, apiKey, modelName, prompt, imgBytes2);
