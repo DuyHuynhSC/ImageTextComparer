@@ -409,14 +409,11 @@ namespace ImageTextComparer
                 }
             }
 
-            // If the bitmap is too small, upscale it with high-quality scaling for better AI Vision OCR accuracy
-            if (finalSource.PixelHeight < 150)
+            // If the bitmap is too small, upscale it with NearestNeighbor scaling to keep text pixels crisp and sharp
+            if (finalSource.PixelHeight < 300)
             {
                 double scale = 300.0 / finalSource.PixelHeight;
-                var scaleTransform = new ScaleTransform(scale, scale);
-                var scaledBitmap = new TransformedBitmap(finalSource, scaleTransform);
-                scaledBitmap.Freeze();
-                finalSource = scaledBitmap;
+                finalSource = ScaleBitmapNearestNeighbor(finalSource, scale);
             }
 
             // Convert BitmapSource to PNG bytes
@@ -427,6 +424,24 @@ namespace ImageTextComparer
                 encoder.Save(stream);
                 return stream.ToArray();
             }
+        }
+
+        private static BitmapSource ScaleBitmapNearestNeighbor(BitmapSource source, double scale)
+        {
+            int width = (int)Math.Round(source.PixelWidth * scale);
+            int height = (int)Math.Round(source.PixelHeight * scale);
+
+            var visual = new DrawingVisual();
+            using (var context = visual.RenderOpen())
+            {
+                RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.NearestNeighbor);
+                context.DrawImage(source, new Rect(0, 0, width, height));
+            }
+
+            var target = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            target.Render(visual);
+            target.Freeze();
+            return target;
         }
 
         #endregion
