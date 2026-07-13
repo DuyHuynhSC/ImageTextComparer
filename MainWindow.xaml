@@ -293,22 +293,25 @@
 
                         <!-- Image Container with Crop Canvas overlay -->
                         <Border Grid.Row="1" Background="{DynamicResource ImageAreaBg}" CornerRadius="6" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" ClipToBounds="True">
-                            <Grid x:Name="GridImage1">
+                            <Grid>
                                 <!-- Placeholder message -->
-                                <StackPanel x:Name="Placeholder1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <StackPanel x:Name="Placeholder1" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
                                     <TextBlock Text="Chưa chọn hình ảnh" Foreground="{DynamicResource TextLabelFg}" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                     <TextBlock Text="Dùng chuột quét vùng để trích xuất tập trung" Foreground="{DynamicResource TextLabelFg}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                                 
-                                <Image x:Name="Img1" Stretch="Uniform"/>
-                                
-                                <Canvas x:Name="Canvas1" Background="Transparent" 
-                                        Cursor="Cross"
-                                        MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
-                                        MouseMove="Canvas_MouseMove"
-                                        MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
-                                    <Rectangle x:Name="RectSelection1" Stroke="#6366F1" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E6366F1" Visibility="Collapsed"/>
-                                </Canvas>
+                                <!-- Center-aligned grid that matches the rendered image viewport exactly -->
+                                <Grid x:Name="GridImage1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image x:Name="Img1" Stretch="Uniform"/>
+                                    
+                                    <Canvas x:Name="Canvas1" Background="Transparent" 
+                                            Cursor="Cross"
+                                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                            MouseMove="Canvas_MouseMove"
+                                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+                                        <Rectangle x:Name="RectSelection1" Stroke="#6366F1" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E6366F1" Visibility="Collapsed"/>
+                                    </Canvas>
+                                </Grid>
                             </Grid>
                         </Border>
 
@@ -335,22 +338,25 @@
 
                         <!-- Image Container with Crop Canvas overlay -->
                         <Border Grid.Row="1" Background="{DynamicResource ImageAreaBg}" CornerRadius="6" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" ClipToBounds="True">
-                            <Grid x:Name="GridImage2">
+                            <Grid>
                                 <!-- Placeholder message -->
-                                <StackPanel x:Name="Placeholder2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <StackPanel x:Name="Placeholder2" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
                                     <TextBlock Text="Chưa chọn hình ảnh" Foreground="{DynamicResource TextLabelFg}" FontSize="14" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                     <TextBlock Text="Dùng chuột quét vùng để trích xuất tập trung" Foreground="{DynamicResource TextLabelFg}" FontSize="11" HorizontalAlignment="Center"/>
                                 </StackPanel>
                                 
-                                <Image x:Name="Img2" Stretch="Uniform"/>
-                                
-                                <Canvas x:Name="Canvas2" Background="Transparent" 
-                                        Cursor="Cross"
-                                        MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
-                                        MouseMove="Canvas_MouseMove"
-                                        MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
-                                    <Rectangle x:Name="RectSelection2" Stroke="#8B5CF6" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E8B5CF6" Visibility="Collapsed"/>
-                                </Canvas>
+                                <!-- Center-aligned grid that matches the rendered image viewport exactly -->
+                                <Grid x:Name="GridImage2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image x:Name="Img2" Stretch="Uniform"/>
+                                    
+                                    <Canvas x:Name="Canvas2" Background="Transparent" 
+                                            Cursor="Cross"
+                                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                            MouseMove="Canvas_MouseMove"
+                                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+                                        <Rectangle x:Name="RectSelection2" Stroke="#8B5CF6" StrokeThickness="1.5" StrokeDashArray="4 3" Fill="#1E8B5CF6" Visibility="Collapsed"/>
+                                    </Canvas>
+                                </Grid>
                             </Grid>
                         </Border>
 

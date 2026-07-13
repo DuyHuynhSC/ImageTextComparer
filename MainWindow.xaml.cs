@@ -363,57 +363,29 @@ namespace ImageTextComparer
 
                 if (controlWidth > 0 && controlHeight > 0)
                 {
-                    double imageRatio = pixelWidth / pixelHeight;
-                    double controlRatio = controlWidth / controlHeight;
+                    // Map UI coordinates directly to raw pixels (no offset subtractions needed!)
+                    double scaleX = pixelWidth / controlWidth;
+                    double scaleY = pixelHeight / controlHeight;
 
-                    double renderedWidth, renderedHeight;
-                    double offsetX = 0, offsetY = 0;
+                    double cropX = uiRect.X * scaleX;
+                    double cropY = uiRect.Y * scaleY;
+                    double cropW = uiRect.Width * scaleX;
+                    double cropH = uiRect.Height * scaleY;
 
-                    if (controlRatio > imageRatio)
+                    // Clamp to image boundaries just to prevent rounding errors
+                    cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
+                    cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
+                    cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
+                    cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
+
+                    try
                     {
-                        // Pillarbox
-                        renderedHeight = controlHeight;
-                        renderedWidth = controlHeight * imageRatio;
-                        offsetX = (controlWidth - renderedWidth) / 2.0;
+                        finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // Letterbox
-                        renderedWidth = controlWidth;
-                        renderedHeight = controlWidth / imageRatio;
-                        offsetY = (controlHeight - renderedHeight) / 2.0;
-                    }
-
-                    // Intersect selection rect with the actual rendered image bounds in UI space
-                    var imageRect = new Rect(offsetX, offsetY, renderedWidth, renderedHeight);
-                    uiRect.Intersect(imageRect);
-
-                    if (!uiRect.IsEmpty && uiRect.Width > 0 && uiRect.Height > 0)
-                    {
-                        // Map UI coordinates to raw pixels
-                        double scaleX = pixelWidth / renderedWidth;
-                        double scaleY = pixelHeight / renderedHeight;
-
-                        double cropX = (uiRect.X - offsetX) * scaleX;
-                        double cropY = (uiRect.Y - offsetY) * scaleY;
-                        double cropW = uiRect.Width * scaleX;
-                        double cropH = uiRect.Height * scaleY;
-
-                        // Clamp to image boundaries
-                        cropX = Math.Max(0, Math.Min(pixelWidth - 1, cropX));
-                        cropY = Math.Max(0, Math.Min(pixelHeight - 1, cropY));
-                        cropW = Math.Max(1, Math.Min(pixelWidth - cropX, cropW));
-                        cropH = Math.Max(1, Math.Min(pixelHeight - cropY, cropH));
-
-                        try
-                        {
-                            finalSource = new CroppedBitmap(original, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
-                            finalSource = original;
-                        }
+                        System.Diagnostics.Debug.WriteLine($"Lỗi crop ảnh: {ex.Message}");
+                        finalSource = original;
                     }
                 }
             }
