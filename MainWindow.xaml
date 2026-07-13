@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="AI Image Text Comparer" Height="780" Width="1200"
         Background="{DynamicResource WindowBg}" WindowStartupLocation="CenterScreen"
-        MinHeight="700" MinWidth="1000">
+        MinHeight="700" MinWidth="1000" WindowState="Maximized">
     
     <Window.Resources>
         <!-- Theme Color Brushes (Default Dark Theme) -->
@@ -193,45 +193,63 @@
 
     <Grid Margin="16">
         <Grid.ColumnDefinitions>
-            <!-- Settings Sidebar -->
-            <ColumnDefinition Width="280"/>
-            <!-- Main Content Area -->
+            <!-- Column 0: Collapsible Sidebar -->
+            <ColumnDefinition x:Name="ColSidebar" Width="Auto"/>
+            <!-- Column 1: Main Content Area -->
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- SIDEBAR - API CONFIGURATION -->
-        <Border Grid.Column="0" Style="{StaticResource PanelBorder}" Margin="0,0,16,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="CẤU HÌNH AI" Foreground="{DynamicResource TextFg}" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+        <Grid Grid.Column="0" Margin="0,0,16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ColSidebarContent" Width="280"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="API Endpoint URL" Style="{StaticResource ModernLabel}"/>
-                    <TextBox x:Name="TxtEndpoint" Style="{StaticResource ConfigTextBox}" 
-                             Text="http://localhost:11434/v1/chat/completions" Margin="0,0,0,14"/>
+            <!-- Actual Config Border -->
+            <Border x:Name="BorderSidebar" Grid.Column="0" Style="{StaticResource PanelBorder}" CornerRadius="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="CẤU HÌNH AI" Foreground="{DynamicResource TextFg}" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
 
-                    <TextBlock Text="API Key (nếu có)" Style="{StaticResource ModernLabel}"/>
-                    <TextBox x:Name="TxtApiKey" Style="{StaticResource ConfigTextBox}" 
-                             Text="" Margin="0,0,0,14" />
+                        <TextBlock Text="API Endpoint URL" Style="{StaticResource ModernLabel}"/>
+                        <TextBox x:Name="TxtEndpoint" Style="{StaticResource ConfigTextBox}" 
+                                 Text="http://localhost:11434/v1/chat/completions" Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Model Name" Style="{StaticResource ModernLabel}"/>
-                    <TextBox x:Name="TxtModelName" Style="{StaticResource ConfigTextBox}" 
-                             Text="qwen2.5-vl" Margin="0,0,0,14"/>
+                        <TextBlock Text="API Key (nếu có)" Style="{StaticResource ModernLabel}"/>
+                        <TextBox x:Name="TxtApiKey" Style="{StaticResource ConfigTextBox}" 
+                                 Text="" Margin="0,0,0,14" />
 
-                    <CheckBox x:Name="ChkBypassSsl" Content="Bỏ qua xác thực SSL (tự ký)" 
-                              Foreground="{DynamicResource TextLabelFg}" FontSize="12" Margin="0,0,0,14" VerticalAlignment="Center"/>
+                        <TextBlock Text="Model Name" Style="{StaticResource ModernLabel}"/>
+                        <TextBox x:Name="TxtModelName" Style="{StaticResource ConfigTextBox}" 
+                                 Text="qwen2.5-vl" Margin="0,0,0,14"/>
 
-                    <TextBlock Text="AI Prompts" Style="{StaticResource ModernLabel}"/>
-                    <TextBox x:Name="TxtPrompt" Style="{StaticResource ConfigTextBox}" 
-                             AcceptsReturn="True" TextWrapping="Wrap" Height="100" VerticalScrollBarVisibility="Auto"
-                             Text="Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.&#x0a;&#x0a;Hãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.&#x0a;&#x0a;画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。" 
-                             Margin="0,0,0,20"/>
+                        <CheckBox x:Name="ChkBypassSsl" Content="Bỏ qua xác thực SSL (tự ký)" 
+                                  Foreground="{DynamicResource TextLabelFg}" FontSize="12" Margin="0,0,0,14" VerticalAlignment="Center"/>
 
-                    <Button Content="Lưu cấu hình" Style="{StaticResource ActionButton}" Click="BtnSaveConfig_Click" Margin="0,0,0,10"/>
-                    <Button Content="Đặt về mặc định" Style="{StaticResource ActionButton}" Click="BtnResetConfig_Click" Margin="0,0,0,10"/>
-                    <Button Content="Mở thư mục chẩn đoán" Style="{StaticResource ActionButton}" Click="BtnOpenDebugFolder_Click"/>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
+                        <TextBlock Text="AI Prompts" Style="{StaticResource ModernLabel}"/>
+                        <TextBox x:Name="TxtPrompt" Style="{StaticResource ConfigTextBox}" 
+                                 AcceptsReturn="True" TextWrapping="Wrap" Height="220" VerticalScrollBarVisibility="Auto"
+                                 Text="Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., &quot;出 力 フ ォ ル ダ バ ス&quot;). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., &quot;バ&quot;, &quot;ズ&quot;) and Handakuten (゜, e.g., &quot;パ&quot;, &quot;プ&quot;). Output exactly what you see.&#x0a;&#x0a;Hãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: &quot;出 力 フ ォ ル ダ バ ス&quot;). Không tự sửa chính tả theo ngữ cảnh.&#x0a;&#x0a;画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください." 
+                                 Margin="0,0,0,20"/>
+
+                        <Button Content="Lưu cấu hình" Style="{StaticResource ActionButton}" Click="BtnSaveConfig_Click" Margin="0,0,0,10"/>
+                        <Button Content="Đặt về mặc định" Style="{StaticResource ActionButton}" Click="BtnResetConfig_Click" Margin="0,0,0,10"/>
+                        <Button Content="Mở thư mục chẩn đoán" Style="{StaticResource ActionButton}" Click="BtnOpenDebugFolder_Click"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Sidebar Toggle Button (Vertical Grabber) -->
+            <Grid Grid.Column="1" Background="Transparent" Width="20" Margin="4,0,0,0">
+                <Button x:Name="BtnToggleSidebar" Content="◀" 
+                        Style="{StaticResource ActionButton}" 
+                        Padding="2,12" FontSize="11" 
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Click="BtnToggleSidebar_Click"
+                        ToolTip="Thu gọn / Mở rộng cấu hình"/>
+            </Grid>
+        </Grid>
 
         <!-- MAIN WORKSPACE -->
         <Grid Grid.Column="1">

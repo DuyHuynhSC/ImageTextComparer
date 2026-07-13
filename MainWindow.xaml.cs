@@ -28,7 +28,7 @@ namespace ImageTextComparer
         private Rect _selectionRect2;
 
         // Theme and Diff Cache
-        private bool _isDarkTheme = true;
+        private bool _isDarkTheme = false;
         private System.Collections.Generic.List<DiffResult>? _lastDiffs;
 
         private const string ConfigFileName = "config.json";
@@ -45,6 +45,7 @@ namespace ImageTextComparer
         public MainWindow()
         {
             InitializeComponent();
+            ApplyTheme();
             LoadConfig();
         }
 
@@ -152,6 +153,27 @@ namespace ImageTextComparer
             catch (Exception ex)
             {
                 MessageBox.Show($"Không thể mở thư mục chẩn đoán: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private bool _isSidebarCollapsed = false;
+
+        private void BtnToggleSidebar_Click(object sender, RoutedEventArgs e)
+        {
+            _isSidebarCollapsed = !_isSidebarCollapsed;
+            if (_isSidebarCollapsed)
+            {
+                BorderSidebar.Visibility = Visibility.Collapsed;
+                ColSidebarContent.Width = new GridLength(0);
+                BtnToggleSidebar.Content = "▶";
+                BtnToggleSidebar.ToolTip = "Mở rộng cấu hình AI";
+            }
+            else
+            {
+                BorderSidebar.Visibility = Visibility.Visible;
+                ColSidebarContent.Width = new GridLength(280);
+                BtnToggleSidebar.Content = "◀";
+                BtnToggleSidebar.ToolTip = "Thu gọn cấu hình AI";
             }
         }
 
