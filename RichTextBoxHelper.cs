@@ -22,12 +22,12 @@ namespace ImageTextComparer
             var leftParagraph = new Paragraph();
             var rightParagraph = new Paragraph();
 
-            // Set font family and size
+            // Set font family and size (increased to 16.0 for readability)
             leftParagraph.FontFamily = new FontFamily("Consolas");
-            leftParagraph.FontSize = 13.5;
+            leftParagraph.FontSize = 16.0;
             
             rightParagraph.FontFamily = new FontFamily("Consolas");
-            rightParagraph.FontSize = 13.5;
+            rightParagraph.FontSize = 16.0;
 
             // Setup Theme Brushes
             SolidColorBrush normalTextBrush = isDarkTheme 
@@ -63,23 +63,25 @@ namespace ImageTextComparer
                         break;
 
                     case DiffType.Deleted:
-                        var delRun = new Run(diff.Text)
+                        // Wrap in a Span because WPF RichTextBox ignores background colors directly set on a Run
+                        var delSpan = new Span(new Run(diff.Text))
                         {
                             Foreground = deletedTextBrush,
                             Background = deletedBackgroundBrush,
                             TextDecorations = TextDecorations.Underline
                         };
-                        leftParagraph.Inlines.Add(delRun);
+                        leftParagraph.Inlines.Add(delSpan);
                         break;
 
                     case DiffType.Inserted:
-                        var insRun = new Run(diff.Text)
+                        // Wrap in a Span because WPF RichTextBox ignores background colors directly set on a Run
+                        var insSpan = new Span(new Run(diff.Text))
                         {
                             Foreground = insertedTextBrush,
                             Background = insertedBackgroundBrush,
                             FontWeight = FontWeights.SemiBold
                         };
-                        rightParagraph.Inlines.Add(insRun);
+                        rightParagraph.Inlines.Add(insSpan);
                         break;
                 }
             }
