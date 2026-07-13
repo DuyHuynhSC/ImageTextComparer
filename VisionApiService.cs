@@ -60,6 +60,22 @@ namespace ImageTextComparer
 
                     if (!response.IsSuccessStatusCode)
                     {
+                        // Check if it is an HTTP redirect (301, 302, 307, 308)
+                        if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || // 301
+                            response.StatusCode == System.Net.HttpStatusCode.Found || // 302
+                            response.StatusCode == System.Net.HttpStatusCode.SeeOther || // 303
+                            response.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect || // 307
+                            (int)response.StatusCode == 308) // Permanent Redirect
+                        {
+                            var redirectUri = response.Headers.Location;
+                            if (redirectUri != null)
+                            {
+                                // Make relative redirect URIs absolute if needed
+                                Uri absoluteUri = redirectUri.IsAbsoluteUri ? redirectUri : new Uri(new Uri(endpoint), redirectUri);
+                                throw new Exception($"Địa chỉ API Endpoint của bạn đã được chuyển hướng (Redirect {(int)response.StatusCode}) sang địa chỉ mới:\n--> {absoluteUri}\n\nVui lòng copy địa chỉ mới này dán lại vào ô 'API Endpoint URL' ở cột cấu hình bên trái và thử lại.");
+                            }
+                        }
+
                         throw new Exception($"API Request failed with status code {response.StatusCode}.\nDetails: {responseContent}");
                     }
 
