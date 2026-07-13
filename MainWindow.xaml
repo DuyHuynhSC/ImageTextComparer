@@ -227,7 +227,8 @@
                              Margin="0,0,0,20"/>
 
                     <Button Content="Lưu cấu hình" Style="{StaticResource ActionButton}" Click="BtnSaveConfig_Click" Margin="0,0,0,10"/>
-                    <Button Content="Đặt về mặc định" Style="{StaticResource ActionButton}" Click="BtnResetConfig_Click"/>
+                    <Button Content="Đặt về mặc định" Style="{StaticResource ActionButton}" Click="BtnResetConfig_Click" Margin="0,0,0,10"/>
+                    <Button Content="Mở thư mục chẩn đoán" Style="{StaticResource ActionButton}" Click="BtnOpenDebugFolder_Click"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>

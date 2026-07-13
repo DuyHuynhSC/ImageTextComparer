@@ -50,9 +50,22 @@ namespace ImageTextComparer
 
         #region Configuration Storage
 
+        private string GetAppDataFolder()
+        {
+            string folder = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ImageTextComparer"
+            );
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return folder;
+        }
+
         private string GetConfigPath()
         {
-            return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
+            return System.IO.Path.Combine(GetAppDataFolder(), ConfigFileName);
         }
 
         private void LoadConfig()
@@ -123,6 +136,23 @@ namespace ImageTextComparer
             TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
+        }
+
+        private void BtnOpenDebugFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string folder = GetAppDataFolder();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = folder,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Không thể mở thư mục chẩn đoán: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         #endregion
@@ -478,10 +508,10 @@ namespace ImageTextComparer
                 byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1));
                 byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2));
 
-                // Save cropped images locally for diagnostics (saved as crop_debug_1.png and crop_debug_2.png)
+                // Save cropped images locally for diagnostics (saved as crop_debug_1.png and crop_debug_2.png in AppData)
                 try
                 {
-                    string debugDir = AppDomain.CurrentDomain.BaseDirectory;
+                    string debugDir = GetAppDataFolder();
                     File.WriteAllBytes(System.IO.Path.Combine(debugDir, "crop_debug_1.png"), imgBytes1);
                     File.WriteAllBytes(System.IO.Path.Combine(debugDir, "crop_debug_2.png"), imgBytes2);
                 }
