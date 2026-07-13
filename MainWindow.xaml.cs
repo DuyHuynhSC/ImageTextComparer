@@ -113,7 +113,7 @@ namespace ImageTextComparer
             TxtEndpoint.Text = "http://localhost:11434/v1/chat/completions";
             TxtApiKey.Text = "";
             TxtModelName.Text = "qwen2.5-vl";
-            TxtPrompt.Text = "Hãy trích xuất chính xác toàn bộ văn bản có trong hình ảnh này. Chỉ trả về kết quả văn bản được trích xuất, giữ nguyên bố cục dòng cột nếu có. Không giải thích hay thêm bớt thông tin.";
+            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy.\nĐặc biệt lưu ý:\n1. Đọc chính xác từng nét chữ, không tự động sửa lỗi chính tả hay tự hoàn thành từ theo ngữ cảnh.\n2. Với tiếng Nhật, phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không nhầm lẫn giữa chúng.\n3. Chỉ trả về kết quả văn bản được trích xuất.";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }
@@ -410,6 +410,16 @@ namespace ImageTextComparer
                         finalSource = original;
                     }
                 }
+            }
+
+            // If the bitmap is too small, upscale it with high-quality scaling for better AI Vision OCR accuracy
+            if (finalSource.PixelHeight < 150)
+            {
+                double scale = 300.0 / finalSource.PixelHeight;
+                var scaleTransform = new ScaleTransform(scale, scale);
+                var scaledBitmap = new TransformedBitmap(finalSource, scaleTransform);
+                scaledBitmap.Freeze();
+                finalSource = scaledBitmap;
             }
 
             // Convert BitmapSource to PNG bytes
