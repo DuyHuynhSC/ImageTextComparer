@@ -72,10 +72,10 @@ namespace ImageTextComparer
                         TxtPrompt.Text = config.Prompt;
                         ChkBypassSsl.IsChecked = config.BypassSsl;
 
-                        // Auto-upgrade prompt if it's the old prompt (doesn't contain Japanese instructions)
-                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("画像からテキスト"))
+                        // Auto-upgrade prompt if it's the old prompt (doesn't contain English instructions)
+                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("Perform strict"))
                         {
-                            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy. Phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không tự sửa lỗi chính tả theo ngữ cảnh.\n\n画像からテキストを正確に抽出（OCR）してください。文脈による自動修正は一切行わないでください。特に日本語の濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別し、見たままの文字を出力してください。";
+                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
                             SaveConfig();
                         }
                     }
@@ -120,7 +120,7 @@ namespace ImageTextComparer
             TxtEndpoint.Text = "http://localhost:11434/v1/chat/completions";
             TxtApiKey.Text = "";
             TxtModelName.Text = "qwen2.5-vl";
-            TxtPrompt.Text = "Hãy trích xuất chính xác từng ký tự trong hình ảnh này dưới dạng OCR thuần túy. Phân biệt cực kỳ rõ ràng giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Tuyệt đối không tự sửa lỗi chính tả theo ngữ cảnh.\n\n画像からテキストを正確に抽出（OCR）してください。文脈による自動修正は一切行わないでください。特に日本語の濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別し、見たままの文字を出力してください。";
+            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }

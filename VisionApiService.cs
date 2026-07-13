@@ -31,7 +31,7 @@ namespace ImageTextComparer
 
             string base64Image = Convert.ToBase64String(imageBytes);
 
-            // Construct payload following OpenAI Chat Completions Vision specification
+            // Construct payload following OpenAI Chat Completions Vision specification with temperature = 0.0 for strict OCR determinism
             var payload = new
             {
                 model = modelName,
@@ -46,7 +46,8 @@ namespace ImageTextComparer
                             new { type = "image_url", image_url = new { url = $"data:image/png;base64,{base64Image}" } }
                         }
                     }
-                }
+                },
+                temperature = 0.0
             };
 
             string jsonPayload = JsonSerializer.Serialize(payload);
