@@ -30,7 +30,21 @@ namespace ImageTextComparer
     public static class DiffEngine
     {
         /// <summary>
-        /// Tokenizes a string into words and whitespace blocks.
+        /// Checks if a character belongs to CJK (Chinese, Japanese, Korean) ranges.
+        /// </summary>
+        private static bool IsCjk(char c)
+        {
+            int val = (int)c;
+            return (val >= 0x3000 && val <= 0x303F) || // CJK symbols and punctuation
+                   (val >= 0x3040 && val <= 0x309F) || // Hiragana
+                   (val >= 0x30A0 && val <= 0x30FF) || // Katakana
+                   (val >= 0x4E00 && val <= 0x9FFF) || // CJK Unified Ideographs (Kanji)
+                   (val >= 0xF900 && val <= 0xFAFF) || // CJK Compatibility Ideographs
+                   (val >= 0xFF00 && val <= 0xFFEF);   // Fullwidth forms
+        }
+
+        /// <summary>
+        /// Tokenizes a string into words, CJK characters, and whitespace blocks.
         /// </summary>
         public static List<string> Tokenize(string text)
         {
@@ -40,7 +54,8 @@ namespace ImageTextComparer
             int i = 0;
             while (i < text.Length)
             {
-                if (char.IsWhiteSpace(text[i]))
+                char c = text[i];
+                if (char.IsWhiteSpace(c))
                 {
                     int start = i;
                     while (i < text.Length && char.IsWhiteSpace(text[i]))
@@ -49,10 +64,17 @@ namespace ImageTextComparer
                     }
                     tokens.Add(text.Substring(start, i - start));
                 }
+                else if (IsCjk(c))
+                {
+                    // CJK characters are treated as individual tokens for precise diffing
+                    tokens.Add(c.ToString());
+                    i++;
+                }
                 else
                 {
+                    // Group Latin characters, numbers, and symbols into words
                     int start = i;
-                    while (i < text.Length && !char.IsWhiteSpace(text[i]))
+                    while (i < text.Length && !char.IsWhiteSpace(text[i]) && !IsCjk(text[i]))
                     {
                         i++;
                     }

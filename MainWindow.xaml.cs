@@ -136,6 +136,8 @@ namespace ImageTextComparer
                     bitmap.UriSource = new Uri(dialog.FileName);
                     bitmap.EndInit();
 
+                    bitmap.Freeze(); // Freeze bitmap to allow cross-thread access
+
                     _imageSource1 = bitmap;
                     Img1.Source = bitmap;
                     Placeholder1.Visibility = Visibility.Collapsed;
@@ -167,6 +169,8 @@ namespace ImageTextComparer
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.UriSource = new Uri(dialog.FileName);
                     bitmap.EndInit();
+
+                    bitmap.Freeze(); // Freeze bitmap to allow cross-thread access
 
                     _imageSource2 = bitmap;
                     Img2.Source = bitmap;
@@ -344,7 +348,7 @@ namespace ImageTextComparer
 
         #region Coordinate Mapping and Cropping
 
-        private byte[] GetProcessedImageBytes(BitmapSource original, Rect uiRect, Image imageControl)
+        private byte[] GetProcessedImageBytes(BitmapSource original, Rect uiRect, double controlWidth, double controlHeight)
         {
             BitmapSource finalSource = original;
 
@@ -352,9 +356,6 @@ namespace ImageTextComparer
             {
                 double pixelWidth = original.PixelWidth;
                 double pixelHeight = original.PixelHeight;
-
-                double controlWidth = imageControl.ActualWidth;
-                double controlHeight = imageControl.ActualHeight;
 
                 if (controlWidth > 0 && controlHeight > 0)
                 {
@@ -444,8 +445,15 @@ namespace ImageTextComparer
             {
                 // 1. Prepare image bytes
                 TxtStatus.Text = "Chuẩn bị hình ảnh và cắt vùng quét...";
-                byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1, Img1));
-                byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2, Img2));
+                
+                // Get control dimensions on the UI thread to avoid thread affinity exception
+                double w1 = Img1.ActualWidth;
+                double h1 = Img1.ActualHeight;
+                double w2 = Img2.ActualWidth;
+                double h2 = Img2.ActualHeight;
+
+                byte[] imgBytes1 = await Task.Run(() => GetProcessedImageBytes(_imageSource1, _selectionRect1, w1, h1));
+                byte[] imgBytes2 = await Task.Run(() => GetProcessedImageBytes(_imageSource2, _selectionRect2, w2, h2));
 
                 // 2. Call Vision API (concurrently to save time)
                 TxtStatus.Text = "AI đang trích xuất văn bản (đang gửi API)...";
