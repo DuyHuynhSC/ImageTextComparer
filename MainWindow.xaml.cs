@@ -85,10 +85,10 @@ namespace ImageTextComparer
                         TxtPrompt.Text = config.Prompt;
                         ChkBypassSsl.IsChecked = config.BypassSsl;
 
-                        // Auto-upgrade prompt if it's the old prompt (doesn't contain English instructions)
-                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("Perform strict"))
+                        // Auto-upgrade prompt if it's the old prompt (doesn't contain space separation instruction)
+                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("Extract each character"))
                         {
-                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
+                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
                             SaveConfig();
                         }
                     }
@@ -133,7 +133,7 @@ namespace ImageTextComparer
             TxtEndpoint.Text = "http://localhost:11434/v1/chat/completions";
             TxtApiKey.Text = "";
             TxtModelName.Text = "qwen2.5-vl";
-            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., バ, ズ) and Handakuten (゜, e.g., パ, プ). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Phân biệt rõ giữa dakuten (゛ - ví dụ: バ) và handakuten (゜ - ví dụ: パ). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）してください。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
+            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }
@@ -474,6 +474,27 @@ namespace ImageTextComparer
             return target;
         }
 
+        private static string NormalizeSpaceSeparatedOcr(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            
+            // Normalize newlines
+            text = text.Replace("\r\n", "\n").Replace("\r", "\n");
+            
+            string[] lines = text.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                // Replace double spaces with a temporary placeholder, remove single spaces, restore double spaces as single spaces
+                line = line.Replace("  ", "___WORD_GAP___");
+                line = line.Replace(" ", "");
+                line = line.Replace("___WORD_GAP___", " ");
+                lines[i] = line;
+            }
+            
+            return string.Join(Environment.NewLine, lines);
+        }
+
         #endregion
 
         #region Core Orchestration: OCR & Diff
@@ -530,8 +551,8 @@ namespace ImageTextComparer
 
                 await Task.WhenAll(task1, task2);
 
-                string text1 = task1.Result;
-                string text2 = task2.Result;
+                string text1 = NormalizeSpaceSeparatedOcr(task1.Result);
+                string text2 = NormalizeSpaceSeparatedOcr(task2.Result);
 
                 // 3. Diff and highlight results
                 TxtStatus.Text = "Đang so sánh văn bản trích xuất...";
