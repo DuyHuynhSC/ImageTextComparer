@@ -101,10 +101,10 @@ namespace ImageTextComparer
                             upgraded = true;
                         }
 
-                        // Auto-upgrade prompt if it's the old prompt (doesn't contain space separation instruction)
-                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("Extract each character"))
+                        // Auto-upgrade prompt if it's the old prompt (doesn't contain unbiased example)
+                        if (string.IsNullOrEmpty(config.Prompt) || !config.Prompt.Contains("unbiased example"))
                         {
-                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字 của間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。".Replace("文字と文字 của間に", "文字と文字の間に");
+                            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space using this unbiased example format: \"A B C D E\". Do NOT auto-correct spelling, do NOT assume vocabulary, and do NOT change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see visually.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (Ví dụ: \"A B C D E\"). Tuyệt đối KHÔNG tự sửa chính tả hay sửa từ theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「A B C D E」）。文脈によるスペル修正や推測、単語の自動修正は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）をビジュアル通りに厳密に区別してください。";
                             upgraded = true;
                         }
 
@@ -154,7 +154,7 @@ namespace ImageTextComparer
             TxtEndpoint.Text = "https://models-gateway.fujinet.net/v1/chat/completions";
             TxtApiKey.Text = "";
             TxtModelName.Text = "programmer";
-            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space (e.g., \"出 力 フ ォ ル ダ バ ス\"). Do NOT auto-correct spelling or change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (ví dụ: \"出 力 フ ォ ル ダ バ ス\"). Không tự sửa chính tả theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「出 力 フ ォ ル ダ バ ス」）。文脈によるスペル修正や推測は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）を厳密に区別してください。";
+            TxtPrompt.Text = "Perform strict, literal character-by-character OCR on the image. Extract each character separated by a space using this unbiased example format: \"A B C D E\". Do NOT auto-correct spelling, do NOT assume vocabulary, and do NOT change characters based on context. Specifically, in Japanese, carefully distinguish between Dakuten (゛, e.g., \"バ\", \"ズ\") and Handakuten (゜, e.g., \"パ\", \"プ\"). Output exactly what you see visually.\n\nHãy trích xuất chính xác từng ký tự dưới dạng OCR thuần túy. Xuất ra từng ký tự cách nhau bằng một dấu cách (Ví dụ: \"A B C D E\"). Tuyệt đối KHÔNG tự sửa chính tả hay sửa từ theo ngữ cảnh.\n\n画像からテキストを1文字ずつ正確に抽出（OCR）し、文字と文字の間に半角スペースを入れて出力してください（例：「A B C D E」）。文脈によるスペル修正や推測、単語 của自動修正は一切行わないでください。特に濁点（゛、例：バ）と半濁点（゜、例：パ）をビジュアル通りに厳密に区別してください。".Replace("単語 của自動修正", "単語の自動修正");
             ChkBypassSsl.IsChecked = false;
             SaveConfig();
         }
