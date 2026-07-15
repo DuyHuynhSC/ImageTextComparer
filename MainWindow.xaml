@@ -307,6 +307,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button x:Name="BtnClearCrop1" Content="Hủy chọn vùng" Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnClearCrop1_Click" Margin="0,0,6,0" Visibility="Collapsed"/>
                                 <Button Content="Chọn ảnh..." Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnLoadImage1_Click"/>
+                                <Button Content="Chụp ảnh..." Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnCaptureImage1_Click" Margin="6,0,0,0"/>
                             </StackPanel>
                         </Grid>
 
@@ -354,6 +355,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button x:Name="BtnClearCrop2" Content="Hủy chọn vùng" Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnClearCrop2_Click" Margin="0,0,6,0" Visibility="Collapsed"/>
                                 <Button Content="Chọn ảnh..." Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnLoadImage2_Click"/>
+                                <Button Content="Chụp ảnh..." Style="{StaticResource ActionButton}" FontSize="11" Padding="8,4" Click="BtnCaptureImage2_Click" Margin="6,0,0,0"/>
                             </StackPanel>
                         </Grid>
 

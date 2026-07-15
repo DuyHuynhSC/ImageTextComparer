@@ -9,6 +9,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using Point = System.Windows.Point;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Application = System.Windows.Application;
 
 namespace ImageTextComparer
 {
@@ -282,6 +285,16 @@ namespace ImageTextComparer
                     MessageBox.Show($"Lỗi tải hình ảnh 2: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void BtnCaptureImage1_Click(object sender, RoutedEventArgs e)
+        {
+            ExecuteScreenCapture(1);
+        }
+
+        private void BtnCaptureImage2_Click(object sender, RoutedEventArgs e)
+        {
+            ExecuteScreenCapture(2);
         }
 
         #endregion
@@ -674,6 +687,286 @@ namespace ImageTextComparer
             return string.Join("\n--> ", messages);
         }
 
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern bool DeleteObject(IntPtr hObject);
+
+        private static BitmapSource ConvertBitmapToBitmapSource(System.Drawing.Bitmap bmp)
+        {
+            IntPtr hBitmap = bmp.GetHbitmap();
+            try
+            {
+                var source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap,
+                    IntPtr.Zero,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+                source.Freeze();
+                return source;
+            }
+            finally
+            {
+                DeleteObject(hBitmap);
+            }
+        }
+
+        private async void ExecuteScreenCapture(int imageNumber)
+        {
+            // 1. Hide main window
+            this.Hide();
+            await Task.Delay(300); // Wait for window to fade out completely
+
+            try
+            {
+                // 2. Capture the virtual screen (all monitors combined)
+                int screenLeft = System.Windows.Forms.SystemInformation.VirtualScreen.Left;
+                int screenTop = System.Windows.Forms.SystemInformation.VirtualScreen.Top;
+                int screenWidth = System.Windows.Forms.SystemInformation.VirtualScreen.Width;
+                int screenHeight = System.Windows.Forms.SystemInformation.VirtualScreen.Height;
+
+                BitmapSource fullScreenImage;
+                using (var bmp = new System.Drawing.Bitmap(screenWidth, screenHeight))
+                {
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    {
+                        g.CopyFromScreen(screenLeft, screenTop, 0, 0, bmp.Size);
+                    }
+                    fullScreenImage = ConvertBitmapToBitmapSource(bmp);
+                }
+
+                // 3. Open capture overlay window
+                var captureWin = new ScreenCaptureWindow(fullScreenImage);
+                captureWin.ShowDialog();
+
+                Rect rect = captureWin.SelectionResult;
+                if (!rect.IsEmpty && rect.Width > 0 && rect.Height > 0)
+                {
+                    // 4. Crop the selected area from the full screen image
+                    double scaleX = fullScreenImage.PixelWidth / System.Windows.SystemParameters.VirtualScreenWidth;
+                    double scaleY = fullScreenImage.PixelHeight / System.Windows.SystemParameters.VirtualScreenHeight;
+
+                    double cropX = rect.X * scaleX;
+                    double cropY = rect.Y * scaleY;
+                    double cropW = rect.Width * scaleX;
+                    double cropH = rect.Height * scaleY;
+
+                    // Clamp crop coordinates to actual pixel size of the screen
+                    cropX = Math.Max(0, Math.Min(fullScreenImage.PixelWidth - 1, cropX));
+                    cropY = Math.Max(0, Math.Min(fullScreenImage.PixelHeight - 1, cropY));
+                    cropW = Math.Max(1, Math.Min(fullScreenImage.PixelWidth - cropX, cropW));
+                    cropH = Math.Max(1, Math.Min(fullScreenImage.PixelHeight - cropY, cropH));
+
+                    var cropped = new CroppedBitmap(fullScreenImage, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
+                    
+                    // Convert CroppedBitmap to BitmapImage to set as source
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(cropped));
+                    
+                    using (var ms = new MemoryStream())
+                    {
+                        encoder.Save(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        
+                        var bmpImg = new BitmapImage();
+                        bmpImg.BeginInit();
+                        bmpImg.StreamSource = ms;
+                        bmpImg.CacheOption = BitmapCacheOption.OnLoad;
+                        bmpImg.EndInit();
+                        bmpImg.Freeze();
+
+                        // 5. Load into corresponding Image slot
+                        if (imageNumber == 1)
+                        {
+                            _imageSource1 = bmpImg;
+                            Img1.Source = _imageSource1;
+                            Placeholder1.Visibility = Visibility.Collapsed;
+                            TxtInfo1.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
+                            
+                            // Bind dimensions to image pixel size for native Viewbox scaling
+                            GridImage1.Width = bmpImg.PixelWidth;
+                            GridImage1.Height = bmpImg.PixelHeight;
+                            Canvas1.Width = bmpImg.PixelWidth;
+                            Canvas1.Height = bmpImg.PixelHeight;
+                            Img1.Width = bmpImg.PixelWidth;
+                            Img1.Height = bmpImg.PixelHeight;
+                            RectSelection1.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
+                            
+                            ClearCropSelection(1);
+                        }
+                        else
+                        {
+                            _imageSource2 = bmpImg;
+                            Img2.Source = _imageSource2;
+                            Placeholder2.Visibility = Visibility.Collapsed;
+                            TxtInfo2.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
+                            
+                            // Bind dimensions to image pixel size for native Viewbox scaling
+                            GridImage2.Width = bmpImg.PixelWidth;
+                            GridImage2.Height = bmpImg.PixelHeight;
+                            Canvas2.Width = bmpImg.PixelWidth;
+                            Canvas2.Height = bmpImg.PixelHeight;
+                            Img2.Width = bmpImg.PixelWidth;
+                            Img2.Height = bmpImg.PixelHeight;
+                            RectSelection2.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
+                            
+                            ClearCropSelection(2);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi chụp màn hình: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Show main window again
+                this.Show();
+                this.Activate();
+            }
+        }
+
         #endregion
+    }
+
+    public class ScreenCaptureWindow : Window
+    {
+        private readonly BitmapSource _fullScreenImage;
+        private Point _startPoint;
+        private System.Windows.Shapes.Rectangle? _selectionRect;
+        private Canvas? _canvas;
+        private Border? _darkMask;
+        private bool _isDragging;
+
+        public Rect SelectionResult { get; private set; } = Rect.Empty;
+
+        public ScreenCaptureWindow(BitmapSource fullScreenImage)
+        {
+            _fullScreenImage = fullScreenImage;
+
+            // Setup window properties
+            this.WindowStyle = WindowStyle.None;
+            this.AllowsTransparency = true;
+            this.Background = System.Windows.Media.Brushes.Transparent;
+            this.WindowState = WindowState.Maximized;
+            this.Topmost = true;
+            this.ShowInTaskbar = false;
+            this.Cursor = System.Windows.Input.Cursors.Cross;
+
+            // Set dimensions to cover virtual screen
+            this.Left = System.Windows.SystemParameters.VirtualScreenLeft;
+            this.Top = System.Windows.SystemParameters.VirtualScreenTop;
+            this.Width = System.Windows.SystemParameters.VirtualScreenWidth;
+            this.Height = System.Windows.SystemParameters.VirtualScreenHeight;
+
+            InitializeCaptureUI();
+        }
+
+        private void InitializeCaptureUI()
+        {
+            var grid = new Grid();
+
+            // Background image of the screen
+            var image = new Image
+            {
+                Source = _fullScreenImage,
+                Stretch = System.Windows.Media.Stretch.None
+            };
+            grid.Children.Add(image);
+
+            // Dark overlay mask
+            _darkMask = new Border
+            {
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(120, 0, 0, 0))
+            };
+            grid.Children.Add(_darkMask);
+
+            // Drawing canvas
+            _canvas = new Canvas
+            {
+                Background = System.Windows.Media.Brushes.Transparent
+            };
+            _canvas.MouseLeftButtonDown += Canvas_MouseLeftButtonDown;
+            _canvas.MouseMove += Canvas_MouseMove;
+            _canvas.MouseLeftButtonUp += Canvas_MouseLeftButtonUp;
+            
+            // Allow canceling with Escape key
+            this.KeyDown += (s, e) =>
+            {
+                if (e.Key == System.Windows.Input.Key.Escape)
+                {
+                    SelectionResult = Rect.Empty;
+                    this.Close();
+                }
+            };
+
+            // Selection rectangle
+            _selectionRect = new System.Windows.Shapes.Rectangle
+            {
+                Stroke = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x63, 0x66, 0xF1)),
+                StrokeThickness = 2,
+                Fill = System.Windows.Media.Brushes.Transparent,
+                Visibility = Visibility.Collapsed
+            };
+            _canvas.Children.Add(_selectionRect);
+            grid.Children.Add(_canvas);
+
+            this.Content = grid;
+        }
+
+        private void Canvas_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _isDragging = true;
+            _startPoint = e.GetPosition(_canvas);
+            _selectionRect!.Visibility = Visibility.Visible;
+            Canvas.SetLeft(_selectionRect, _startPoint.X);
+            Canvas.SetTop(_selectionRect, _startPoint.Y);
+            _selectionRect.Width = 0;
+            _selectionRect.Height = 0;
+        }
+
+        private void Canvas_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_isDragging) return;
+
+            var currentPoint = e.GetPosition(_canvas);
+            double x = Math.Min(_startPoint.X, currentPoint.X);
+            double y = Math.Min(_startPoint.Y, currentPoint.Y);
+            double w = Math.Abs(currentPoint.X - _startPoint.X);
+            double h = Math.Abs(currentPoint.Y - _startPoint.Y);
+
+            Canvas.SetLeft(_selectionRect, x);
+            Canvas.SetTop(_selectionRect, y);
+            _selectionRect!.Width = w;
+            _selectionRect!.Height = h;
+
+            // Dynamic clipping to make the selected area clear (no dark mask)
+            var outerRect = new RectangleGeometry(new Rect(0, 0, this.Width, this.Height));
+            var innerRect = new RectangleGeometry(new Rect(x, y, w, h));
+            var geom = new CombinedGeometry(GeometryCombineMode.Exclude, outerRect, innerRect);
+            _darkMask!.Clip = geom;
+        }
+
+        private void Canvas_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!_isDragging) return;
+            _isDragging = false;
+
+            var currentPoint = e.GetPosition(_canvas);
+            double x = Math.Min(_startPoint.X, currentPoint.X);
+            double y = Math.Min(_startPoint.Y, currentPoint.Y);
+            double w = Math.Abs(currentPoint.X - _startPoint.X);
+            double h = Math.Abs(currentPoint.Y - _startPoint.Y);
+
+            if (w > 5 && h > 5)
+            {
+                SelectionResult = new Rect(x, y, w, h);
+            }
+            else
+            {
+                SelectionResult = Rect.Empty;
+            }
+
+            this.Close();
+        }
     }
 }
