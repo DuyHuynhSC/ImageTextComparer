@@ -709,107 +709,98 @@ namespace ImageTextComparer
             }
         }
 
+
+
         private async void ExecuteScreenCapture(int imageNumber)
         {
             // 1. Hide main window
             this.Hide();
             await Task.Delay(300); // Wait for window to fade out completely
 
+            var captureWindows = new System.Collections.Generic.List<ScreenCaptureWindow>();
+            var tcs = new TaskCompletionSource<CapturedResult?>();
+
             try
             {
-                // 2. Capture the virtual screen (all monitors combined)
-                int screenLeft = System.Windows.Forms.SystemInformation.VirtualScreen.Left;
-                int screenTop = System.Windows.Forms.SystemInformation.VirtualScreen.Top;
-                int screenWidth = System.Windows.Forms.SystemInformation.VirtualScreen.Width;
-                int screenHeight = System.Windows.Forms.SystemInformation.VirtualScreen.Height;
-
-                BitmapSource fullScreenImage;
-                using (var bmp = new System.Drawing.Bitmap(screenWidth, screenHeight))
+                // 2. Capture GDI screenshots and launch overlay windows for each monitor
+                var screens = System.Windows.Forms.Screen.AllScreens;
+                foreach (var screen in screens)
                 {
-                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                    var bounds = screen.Bounds;
+                    using (var bmp = new System.Drawing.Bitmap(bounds.Width, bounds.Height))
                     {
-                        g.CopyFromScreen(screenLeft, screenTop, 0, 0, bmp.Size);
+                        using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        {
+                            g.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, bmp.Size);
+                        }
+                        var screenImageSource = ConvertBitmapToBitmapSource(bmp);
+                        var captureWin = new ScreenCaptureWindow(screenImageSource, bounds, tcs);
+                        captureWindows.Add(captureWin);
                     }
-                    fullScreenImage = ConvertBitmapToBitmapSource(bmp);
                 }
 
-                // 3. Open capture overlay window
-                var captureWin = new ScreenCaptureWindow(fullScreenImage);
-                captureWin.ShowDialog();
-
-                Rect rect = captureWin.SelectionResult;
-                if (!rect.IsEmpty && rect.Width > 0 && rect.Height > 0)
+                // Show all overlay windows simultaneously on their respective monitors
+                foreach (var win in captureWindows)
                 {
-                    // 4. Crop the selected area from the full screen image
-                    double scaleX = fullScreenImage.PixelWidth / System.Windows.SystemParameters.VirtualScreenWidth;
-                    double scaleY = fullScreenImage.PixelHeight / System.Windows.SystemParameters.VirtualScreenHeight;
+                    win.Show();
+                    win.Activate();
+                }
 
-                    double cropX = rect.X * scaleX;
-                    double cropY = rect.Y * scaleY;
-                    double cropW = rect.Width * scaleX;
-                    double cropH = rect.Height * scaleY;
+                // 3. Wait until user selects a region on any window or cancels
+                var result = await tcs.Task;
 
-                    // Clamp crop coordinates to actual pixel size of the screen
-                    cropX = Math.Max(0, Math.Min(fullScreenImage.PixelWidth - 1, cropX));
-                    cropY = Math.Max(0, Math.Min(fullScreenImage.PixelHeight - 1, cropY));
-                    cropW = Math.Max(1, Math.Min(fullScreenImage.PixelWidth - cropX, cropW));
-                    cropH = Math.Max(1, Math.Min(fullScreenImage.PixelHeight - cropY, cropH));
-
-                    var cropped = new CroppedBitmap(fullScreenImage, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
-                    
-                    // Convert CroppedBitmap to BitmapImage to set as source
+                if (result != null)
+                {
+                    var bmpImg = new BitmapImage();
                     var encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(cropped));
+                    encoder.Frames.Add(BitmapFrame.Create(result.Image));
                     
                     using (var ms = new MemoryStream())
                     {
                         encoder.Save(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         
-                        var bmpImg = new BitmapImage();
                         bmpImg.BeginInit();
                         bmpImg.StreamSource = ms;
                         bmpImg.CacheOption = BitmapCacheOption.OnLoad;
                         bmpImg.EndInit();
                         bmpImg.Freeze();
+                    }
 
-                        // 5. Load into corresponding Image slot
-                        if (imageNumber == 1)
-                        {
-                            _imageSource1 = bmpImg;
-                            Img1.Source = _imageSource1;
-                            Placeholder1.Visibility = Visibility.Collapsed;
-                            TxtInfo1.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
-                            
-                            // Bind dimensions to image pixel size for native Viewbox scaling
-                            GridImage1.Width = bmpImg.PixelWidth;
-                            GridImage1.Height = bmpImg.PixelHeight;
-                            Canvas1.Width = bmpImg.PixelWidth;
-                            Canvas1.Height = bmpImg.PixelHeight;
-                            Img1.Width = bmpImg.PixelWidth;
-                            Img1.Height = bmpImg.PixelHeight;
-                            RectSelection1.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
-                            
-                            ClearCropSelection(1);
-                        }
-                        else
-                        {
-                            _imageSource2 = bmpImg;
-                            Img2.Source = _imageSource2;
-                            Placeholder2.Visibility = Visibility.Collapsed;
-                            TxtInfo2.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
-                            
-                            // Bind dimensions to image pixel size for native Viewbox scaling
-                            GridImage2.Width = bmpImg.PixelWidth;
-                            GridImage2.Height = bmpImg.PixelHeight;
-                            Canvas2.Width = bmpImg.PixelWidth;
-                            Canvas2.Height = bmpImg.PixelHeight;
-                            Img2.Width = bmpImg.PixelWidth;
-                            Img2.Height = bmpImg.PixelHeight;
-                            RectSelection2.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
-                            
-                            ClearCropSelection(2);
-                        }
+                    // 4. Load into corresponding Image slot
+                    if (imageNumber == 1)
+                    {
+                        _imageSource1 = bmpImg;
+                        Img1.Source = _imageSource1;
+                        Placeholder1.Visibility = Visibility.Collapsed;
+                        TxtInfo1.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
+
+                        GridImage1.Width = bmpImg.PixelWidth;
+                        GridImage1.Height = bmpImg.PixelHeight;
+                        Canvas1.Width = bmpImg.PixelWidth;
+                        Canvas1.Height = bmpImg.PixelHeight;
+                        Img1.Width = bmpImg.PixelWidth;
+                        Img1.Height = bmpImg.PixelHeight;
+                        RectSelection1.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
+
+                        ClearCropSelection(1);
+                    }
+                    else
+                    {
+                        _imageSource2 = bmpImg;
+                        Img2.Source = _imageSource2;
+                        Placeholder2.Visibility = Visibility.Collapsed;
+                        TxtInfo2.Text = $"Kích thước: {bmpImg.PixelWidth}x{bmpImg.PixelHeight}px (Đã chụp)";
+
+                        GridImage2.Width = bmpImg.PixelWidth;
+                        GridImage2.Height = bmpImg.PixelHeight;
+                        Canvas2.Width = bmpImg.PixelWidth;
+                        Canvas2.Height = bmpImg.PixelHeight;
+                        Img2.Width = bmpImg.PixelWidth;
+                        Img2.Height = bmpImg.PixelHeight;
+                        RectSelection2.StrokeThickness = Math.Max(1.5, bmpImg.PixelWidth / 200.0);
+
+                        ClearCropSelection(2);
                     }
                 }
             }
@@ -819,7 +810,15 @@ namespace ImageTextComparer
             }
             finally
             {
-                // Show main window again
+                // 5. Close all overlay windows and restore main window
+                foreach (var win in captureWindows)
+                {
+                    try
+                    {
+                        win.Close();
+                    }
+                    catch { }
+                }
                 this.Show();
                 this.Activate();
             }
@@ -828,35 +827,53 @@ namespace ImageTextComparer
         #endregion
     }
 
+    public class CapturedResult
+    {
+        public BitmapSource Image { get; set; }
+
+        public CapturedResult(BitmapSource image)
+        {
+            Image = image;
+        }
+    }
+
     public class ScreenCaptureWindow : Window
     {
-        private readonly BitmapSource _fullScreenImage;
+        private readonly BitmapSource _screenImage;
+        private readonly System.Drawing.Rectangle _screenBounds;
+        private readonly TaskCompletionSource<CapturedResult?> _tcs;
+
         private Point _startPoint;
         private System.Windows.Shapes.Rectangle? _selectionRect;
         private Canvas? _canvas;
         private Border? _darkMask;
         private bool _isDragging;
 
-        public Rect SelectionResult { get; private set; } = Rect.Empty;
-
-        public ScreenCaptureWindow(BitmapSource fullScreenImage)
+        public ScreenCaptureWindow(BitmapSource screenImage, System.Drawing.Rectangle screenBounds, TaskCompletionSource<CapturedResult?> tcs)
         {
-            _fullScreenImage = fullScreenImage;
+            _screenImage = screenImage;
+            _screenBounds = screenBounds;
+            _tcs = tcs;
 
-            // Setup window properties
+            // Window Setup
             this.WindowStyle = WindowStyle.None;
             this.AllowsTransparency = true;
             this.Background = System.Windows.Media.Brushes.Transparent;
-            this.WindowState = WindowState.Maximized;
             this.Topmost = true;
             this.ShowInTaskbar = false;
             this.Cursor = System.Windows.Input.Cursors.Cross;
 
-            // Set dimensions to cover virtual screen
-            this.Left = System.Windows.SystemParameters.VirtualScreenLeft;
-            this.Top = System.Windows.SystemParameters.VirtualScreenTop;
-            this.Width = System.Windows.SystemParameters.VirtualScreenWidth;
-            this.Height = System.Windows.SystemParameters.VirtualScreenHeight;
+            // Translate physical pixel coordinates to WPF DIPs based on primary monitor DPI ratio
+            double sysScaleX = (System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Width ?? 1920) / System.Windows.SystemParameters.PrimaryScreenWidth;
+            double sysScaleY = (System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Height ?? 1080) / System.Windows.SystemParameters.PrimaryScreenHeight;
+
+            this.Left = (screenBounds.X + 10) / sysScaleX;
+            this.Top = (screenBounds.Y + 10) / sysScaleY;
+            this.Width = 200;
+            this.Height = 200;
+
+            // Automatically maximize window on this monitor
+            this.WindowState = WindowState.Maximized;
 
             InitializeCaptureUI();
         }
@@ -865,15 +882,15 @@ namespace ImageTextComparer
         {
             var grid = new Grid();
 
-            // Background image of the screen
+            // Background image (screenshot of this monitor)
             var image = new Image
             {
-                Source = _fullScreenImage,
-                Stretch = System.Windows.Media.Stretch.None
+                Source = _screenImage,
+                Stretch = System.Windows.Media.Stretch.Fill
             };
             grid.Children.Add(image);
 
-            // Dark overlay mask
+            // Dark overlay
             _darkMask = new Border
             {
                 Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(120, 0, 0, 0))
@@ -888,18 +905,23 @@ namespace ImageTextComparer
             _canvas.MouseLeftButtonDown += Canvas_MouseLeftButtonDown;
             _canvas.MouseMove += Canvas_MouseMove;
             _canvas.MouseLeftButtonUp += Canvas_MouseLeftButtonUp;
-            
-            // Allow canceling with Escape key
+
+            // Escape key cancels capture
             this.KeyDown += (s, e) =>
             {
                 if (e.Key == System.Windows.Input.Key.Escape)
                 {
-                    SelectionResult = Rect.Empty;
-                    this.Close();
+                    _tcs.TrySetResult(null);
                 }
             };
 
-            // Selection rectangle
+            // Switch focus deactivation cancels capture (user clicks away or Alt+Tabs)
+            this.Deactivated += (s, e) =>
+            {
+                _tcs.TrySetResult(null);
+            };
+
+            // Selection dashed rectangle
             _selectionRect = new System.Windows.Shapes.Rectangle
             {
                 Stroke = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x63, 0x66, 0xF1)),
@@ -939,8 +961,8 @@ namespace ImageTextComparer
             _selectionRect!.Width = w;
             _selectionRect!.Height = h;
 
-            // Dynamic clipping to make the selected area clear (no dark mask)
-            var outerRect = new RectangleGeometry(new Rect(0, 0, this.Width, this.Height));
+            // Clip mask to highlight target region
+            var outerRect = new RectangleGeometry(new Rect(0, 0, this.ActualWidth, this.ActualHeight));
             var innerRect = new RectangleGeometry(new Rect(x, y, w, h));
             var geom = new CombinedGeometry(GeometryCombineMode.Exclude, outerRect, innerRect);
             _darkMask!.Clip = geom;
@@ -959,14 +981,23 @@ namespace ImageTextComparer
 
             if (w > 5 && h > 5)
             {
-                SelectionResult = new Rect(x, y, w, h);
-            }
-            else
-            {
-                SelectionResult = Rect.Empty;
-            }
+                // Translate selection DIPs to physical pixels of this monitor
+                double scaleX = _screenImage.PixelWidth / this.ActualWidth;
+                double scaleY = _screenImage.PixelHeight / this.ActualHeight;
 
-            this.Close();
+                double cropX = x * scaleX;
+                double cropY = y * scaleY;
+                double cropW = w * scaleX;
+                double cropH = h * scaleY;
+
+                cropX = Math.Max(0, Math.Min(_screenImage.PixelWidth - 1, cropX));
+                cropY = Math.Max(0, Math.Min(_screenImage.PixelHeight - 1, cropY));
+                cropW = Math.Max(1, Math.Min(_screenImage.PixelWidth - cropX, cropW));
+                cropH = Math.Max(1, Math.Min(_screenImage.PixelHeight - cropY, cropH));
+
+                var cropped = new CroppedBitmap(_screenImage, new Int32Rect((int)cropX, (int)cropY, (int)cropW, (int)cropH));
+                _tcs.TrySetResult(new CapturedResult(cropped));
+            }
         }
     }
 }
