@@ -864,16 +864,23 @@ namespace ImageTextComparer
             this.Cursor = System.Windows.Input.Cursors.Cross;
 
             // Translate physical pixel coordinates to WPF DIPs based on primary monitor DPI ratio
-            double sysScaleX = (System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Width ?? 1920) / System.Windows.SystemParameters.PrimaryScreenWidth;
-            double sysScaleY = (System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Height ?? 1080) / System.Windows.SystemParameters.PrimaryScreenHeight;
+            double primaryWidth = System.Windows.SystemParameters.PrimaryScreenWidth;
+            double primaryHeight = System.Windows.SystemParameters.PrimaryScreenHeight;
+            
+            double sysScaleX = 1.0;
+            double sysScaleY = 1.0;
+            
+            if (primaryWidth > 0 && primaryHeight > 0)
+            {
+                sysScaleX = (double)(System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Width ?? 1920) / primaryWidth;
+                sysScaleY = (double)(System.Windows.Forms.Screen.PrimaryScreen?.Bounds.Height ?? 1080) / primaryHeight;
+            }
 
-            this.Left = (screenBounds.X + 10) / sysScaleX;
-            this.Top = (screenBounds.Y + 10) / sysScaleY;
-            this.Width = 200;
-            this.Height = 200;
-
-            // Automatically maximize window on this monitor
-            this.WindowState = WindowState.Maximized;
+            // Position and size the window to cover the screen bounds exactly (keeps WindowState.Normal)
+            this.Left = screenBounds.X / sysScaleX;
+            this.Top = screenBounds.Y / sysScaleY;
+            this.Width = screenBounds.Width / sysScaleX;
+            this.Height = screenBounds.Height / sysScaleY;
 
             InitializeCaptureUI();
         }
