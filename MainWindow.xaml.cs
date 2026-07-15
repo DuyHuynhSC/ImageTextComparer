@@ -922,11 +922,7 @@ namespace ImageTextComparer
                 }
             };
 
-            // Switch focus deactivation cancels capture (user clicks away or Alt+Tabs)
-            this.Deactivated += (s, e) =>
-            {
-                _tcs.TrySetResult(null);
-            };
+
 
             // Selection dashed rectangle
             _selectionRect = new System.Windows.Shapes.Rectangle
