@@ -235,7 +235,12 @@
 
                         <Button Content="Lưu cấu hình" Style="{StaticResource ActionButton}" Click="BtnSaveConfig_Click" Margin="0,0,0,10"/>
                         <Button Content="Đặt về mặc định" Style="{StaticResource ActionButton}" Click="BtnResetConfig_Click" Margin="0,0,0,10"/>
-                        <Button Content="Mở thư mục chẩn đoán" Style="{StaticResource ActionButton}" Click="BtnOpenDebugFolder_Click"/>
+                        <Button Content="Mở thư mục chẩn đoán" Style="{StaticResource ActionButton}" Click="BtnOpenDebugFolder_Click" Margin="0,0,0,20"/>
+
+                        <!-- PHIÊN LÀM VIỆC -->
+                        <TextBlock Text="PHIÊN LÀM VIỆC" Foreground="{DynamicResource TextFg}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Button Content="Lưu phiên..." Style="{StaticResource ActionButton}" Click="BtnSaveSession_Click" Margin="0,0,0,10"/>
+                        <Button Content="Mở phiên..." Style="{StaticResource ActionButton}" Click="BtnLoadSession_Click"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

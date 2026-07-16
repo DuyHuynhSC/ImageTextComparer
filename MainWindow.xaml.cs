@@ -33,6 +33,8 @@ namespace ImageTextComparer
         // Theme and Diff Cache
         private bool _isDarkTheme = false;
         private System.Collections.Generic.List<DiffResult>? _lastDiffs;
+        private string? _lastExtractedText1;
+        private string? _lastExtractedText2;
 
         private const string ConfigFileName = "config.json";
 
@@ -50,6 +52,7 @@ namespace ImageTextComparer
             InitializeComponent();
             ApplyTheme();
             LoadConfig();
+            AutoRestoreSession();
         }
 
         #region Configuration Storage
@@ -419,6 +422,7 @@ namespace ImageTextComparer
                     TxtInfo2.Text = $"Kích thước: {_imageSource2!.PixelWidth}x{_imageSource2!.PixelHeight} | Đang khoanh vùng chọn";
                 }
             }
+            AutoSaveSession();
         }
 
         private void BtnClearCrop1_Click(object sender, RoutedEventArgs e)
@@ -453,6 +457,7 @@ namespace ImageTextComparer
                     TxtInfo2.Text = $"Kích thước: {_imageSource2.PixelWidth}x{_imageSource2.PixelHeight} | Quét toàn bộ ảnh";
                 }
             }
+            AutoSaveSession();
         }
 
         #endregion
@@ -609,12 +614,16 @@ namespace ImageTextComparer
                 // 3. Diff and highlight results
                 TxtStatus.Text = "Đang so sánh văn bản trích xuất...";
                 
+                _lastExtractedText1 = text1;
+                _lastExtractedText2 = text2;
+
                 var diffs = await Task.Run(() => DiffEngine.Compare(text1, text2));
                 _lastDiffs = diffs;
 
                 RichTextBoxHelper.RenderDiff(RtfText1, RtfText2, diffs, _isDarkTheme);
 
                 TxtStatus.Text = "Đã so sánh xong!";
+                AutoSaveSession();
             }
             catch (Exception ex)
             {
@@ -825,6 +834,290 @@ namespace ImageTextComparer
         }
 
         #endregion
+
+        #region Session Management
+
+        private static string? BitmapImageToBase64(BitmapImage? bitmapImage)
+        {
+            if (bitmapImage == null) return null;
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+            using (var ms = new MemoryStream())
+            {
+                encoder.Save(ms);
+                return Convert.ToBase64String(ms.ToArray());
+            }
+        }
+
+        private static BitmapImage? Base64ToBitmapImage(string? base64String)
+        {
+            if (string.IsNullOrEmpty(base64String)) return null;
+            byte[] binaryData = Convert.FromBase64String(base64String);
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.StreamSource = new MemoryStream(binaryData);
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.EndInit();
+            bi.Freeze();
+            return bi;
+        }
+
+        private void AutoSaveSession()
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(GetAppDataFolder(), "last_session.json");
+                SaveSessionToFile(path);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Không thể tự động lưu phiên: {ex.Message}");
+            }
+        }
+
+        private void AutoRestoreSession()
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(GetAppDataFolder(), "last_session.json");
+                if (File.Exists(path))
+                {
+                    LoadSessionFromFile(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Không thể tự động khôi phục phiên: {ex.Message}");
+            }
+        }
+
+        private void SaveSessionToFile(string filePath)
+        {
+            var session = new SessionData
+            {
+                ImageBase64_1 = BitmapImageToBase64(_imageSource1),
+                ImageBase64_2 = BitmapImageToBase64(_imageSource2),
+                
+                RectX_1 = _selectionRect1.X,
+                RectY_1 = _selectionRect1.Y,
+                RectW_1 = _selectionRect1.Width,
+                RectH_1 = _selectionRect1.Height,
+
+                RectX_2 = _selectionRect2.X,
+                RectY_2 = _selectionRect2.Y,
+                RectW_2 = _selectionRect2.Width,
+                RectH_2 = _selectionRect2.Height,
+
+                Text_1 = _lastExtractedText1,
+                Text_2 = _lastExtractedText2
+            };
+
+            string json = JsonSerializer.Serialize(session);
+            File.WriteAllText(filePath, json);
+        }
+
+        private void LoadSessionFromFile(string filePath)
+        {
+            if (!File.Exists(filePath)) return;
+
+            string json = File.ReadAllText(filePath);
+            var session = JsonSerializer.Deserialize<SessionData>(json);
+            if (session == null) return;
+
+            // 1. Restore images and selections
+            var img1 = Base64ToBitmapImage(session.ImageBase64_1);
+            var rect1 = (session.RectW_1 > 0 && session.RectH_1 > 0)
+                ? new Rect(session.RectX_1, session.RectY_1, session.RectW_1, session.RectH_1)
+                : Rect.Empty;
+
+            if (img1 != null)
+            {
+                RestoreImageState(1, img1, rect1);
+            }
+            else
+            {
+                ClearImageState(1);
+            }
+
+            var img2 = Base64ToBitmapImage(session.ImageBase64_2);
+            var rect2 = (session.RectW_2 > 0 && session.RectH_2 > 0)
+                ? new Rect(session.RectX_2, session.RectY_2, session.RectW_2, session.RectH_2)
+                : Rect.Empty;
+
+            if (img2 != null)
+            {
+                RestoreImageState(2, img2, rect2);
+            }
+            else
+            {
+                ClearImageState(2);
+            }
+
+            // 2. Restore texts and diff rendering
+            _lastExtractedText1 = session.Text_1;
+            _lastExtractedText2 = session.Text_2;
+
+            if (!string.IsNullOrEmpty(_lastExtractedText1) || !string.IsNullOrEmpty(_lastExtractedText2))
+            {
+                string t1 = _lastExtractedText1 ?? "";
+                string t2 = _lastExtractedText2 ?? "";
+                var diffs = DiffEngine.Compare(t1, t2);
+                _lastDiffs = diffs;
+                RichTextBoxHelper.RenderDiff(RtfText1, RtfText2, diffs, _isDarkTheme);
+            }
+            else
+            {
+                RtfText1.Document.Blocks.Clear();
+                RtfText2.Document.Blocks.Clear();
+                _lastDiffs = null;
+            }
+        }
+
+        private void RestoreImageState(int imageNumber, BitmapImage bitmap, Rect selectionRect)
+        {
+            if (imageNumber == 1)
+            {
+                _imageSource1 = bitmap;
+                Img1.Source = bitmap;
+                Placeholder1.Visibility = Visibility.Collapsed;
+                TxtInfo1.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | Quét toàn bộ ảnh";
+
+                GridImage1.Width = bitmap.PixelWidth;
+                GridImage1.Height = bitmap.PixelHeight;
+                Canvas1.Width = bitmap.PixelWidth;
+                Canvas1.Height = bitmap.PixelHeight;
+                Img1.Width = bitmap.PixelWidth;
+                Img1.Height = bitmap.PixelHeight;
+                RectSelection1.StrokeThickness = Math.Max(1.5, bitmap.PixelWidth / 200.0);
+
+                _selectionRect1 = selectionRect;
+                if (!selectionRect.IsEmpty && selectionRect.Width > 0 && selectionRect.Height > 0)
+                {
+                    RectSelection1.Visibility = Visibility.Visible;
+                    Canvas.SetLeft(RectSelection1, selectionRect.X);
+                    Canvas.SetTop(RectSelection1, selectionRect.Y);
+                    RectSelection1.Width = selectionRect.Width;
+                    RectSelection1.Height = selectionRect.Height;
+                    BtnClearCrop1.Visibility = Visibility.Visible;
+                    TxtInfo1.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | Đang khoanh vùng chọn";
+                }
+                else
+                {
+                    RectSelection1.Visibility = Visibility.Collapsed;
+                    BtnClearCrop1.Visibility = Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                _imageSource2 = bitmap;
+                Img2.Source = bitmap;
+                Placeholder2.Visibility = Visibility.Collapsed;
+                TxtInfo2.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | Quét toàn bộ ảnh";
+
+                GridImage2.Width = bitmap.PixelWidth;
+                GridImage2.Height = bitmap.PixelHeight;
+                Canvas2.Width = bitmap.PixelWidth;
+                Canvas2.Height = bitmap.PixelHeight;
+                Img2.Width = bitmap.PixelWidth;
+                Img2.Height = bitmap.PixelHeight;
+                RectSelection2.StrokeThickness = Math.Max(1.5, bitmap.PixelWidth / 200.0);
+
+                _selectionRect2 = selectionRect;
+                if (!selectionRect.IsEmpty && selectionRect.Width > 0 && selectionRect.Height > 0)
+                {
+                    RectSelection2.Visibility = Visibility.Visible;
+                    Canvas.SetLeft(RectSelection2, selectionRect.X);
+                    Canvas.SetTop(RectSelection2, selectionRect.Y);
+                    RectSelection2.Width = selectionRect.Width;
+                    RectSelection2.Height = selectionRect.Height;
+                    BtnClearCrop2.Visibility = Visibility.Visible;
+                    TxtInfo2.Text = $"Kích thước: {bitmap.PixelWidth}x{bitmap.PixelHeight} | Đang khoanh vùng chọn";
+                }
+                else
+                {
+                    RectSelection2.Visibility = Visibility.Collapsed;
+                    BtnClearCrop2.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private void ClearImageState(int imageNumber)
+        {
+            if (imageNumber == 1)
+            {
+                _imageSource1 = null;
+                Img1.Source = null;
+                Placeholder1.Visibility = Visibility.Visible;
+                TxtInfo1.Text = "Kích thước: -";
+                _selectionRect1 = Rect.Empty;
+                RectSelection1.Visibility = Visibility.Collapsed;
+                BtnClearCrop1.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                _imageSource2 = null;
+                Img2.Source = null;
+                Placeholder2.Visibility = Visibility.Visible;
+                TxtInfo2.Text = "Kích thước: -";
+                _selectionRect2 = Rect.Empty;
+                RectSelection2.Visibility = Visibility.Collapsed;
+                BtnClearCrop2.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void BtnSaveSession_Click(object sender, RoutedEventArgs e)
+        {
+            if (_imageSource1 == null && _imageSource2 == null)
+            {
+                MessageBox.Show("Không có dữ liệu phiên làm việc để lưu.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Session Files|*.json",
+                Title = "Lưu phiên làm việc",
+                FileName = "session_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".json"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    SaveSessionToFile(dialog.FileName);
+                    MessageBox.Show("Lưu phiên làm việc thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi lưu phiên làm việc: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BtnLoadSession_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Session Files|*.json",
+                Title = "Mở phiên làm việc"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    LoadSessionFromFile(dialog.FileName);
+                    AutoSaveSession(); // Update last_session auto-save
+                    MessageBox.Show("Khôi phục phiên làm việc thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi khôi phục phiên làm việc: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        #endregion
     }
 
     public class CapturedResult
@@ -835,6 +1128,25 @@ namespace ImageTextComparer
         {
             Image = image;
         }
+    }
+
+    public class SessionData
+    {
+        public string? ImageBase64_1 { get; set; }
+        public string? ImageBase64_2 { get; set; }
+        
+        public double RectX_1 { get; set; }
+        public double RectY_1 { get; set; }
+        public double RectW_1 { get; set; }
+        public double RectH_1 { get; set; }
+
+        public double RectX_2 { get; set; }
+        public double RectY_2 { get; set; }
+        public double RectW_2 { get; set; }
+        public double RectH_2 { get; set; }
+
+        public string? Text_1 { get; set; }
+        public string? Text_2 { get; set; }
     }
 
     public class ScreenCaptureWindow : Window
