@@ -1069,6 +1069,30 @@ namespace ImageTextComparer
             }
         }
 
+        private void BtnNewSession_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("Bạn có muốn tạo phiên mới và xóa toàn bộ dữ liệu đang so sánh hiện tại không?", "Xác nhận tạo phiên mới", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                ClearImageState(1);
+                ClearImageState(2);
+
+                RtfText1.Document.Blocks.Clear();
+                RtfText2.Document.Blocks.Clear();
+
+                _lastExtractedText1 = null;
+                _lastExtractedText2 = null;
+                _lastDiffs = null;
+
+                LstHistory.SelectionChanged -= LstHistory_SelectionChanged;
+                LstHistory.SelectedItem = null;
+                LstHistory.SelectionChanged += LstHistory_SelectionChanged;
+
+                TxtStatus.Text = "Sẵn sàng (Phiên làm việc mới)";
+                AutoSaveSession();
+            }
+        }
+
         private void BtnSaveSession_Click(object sender, RoutedEventArgs e)
         {
             if (_imageSource1 == null && _imageSource2 == null)

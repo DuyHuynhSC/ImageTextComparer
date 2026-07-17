@@ -239,6 +239,7 @@
 
                         <!-- PHIÊN LÀM VIỆC -->
                         <TextBlock Text="PHIÊN LÀM VIỆC" Foreground="{DynamicResource TextFg}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Button Content="Tạo phiên mới" Style="{StaticResource ActionButton}" Click="BtnNewSession_Click" Margin="0,0,0,10"/>
                         <Button Content="Lưu phiên..." Style="{StaticResource ActionButton}" Click="BtnSaveSession_Click" Margin="0,0,0,10"/>
                         <Button Content="Mở phiên..." Style="{StaticResource ActionButton}" Click="BtnLoadSession_Click" Margin="0,0,0,20"/>
 
