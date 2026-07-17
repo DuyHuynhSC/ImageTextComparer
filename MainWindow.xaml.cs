@@ -36,6 +36,8 @@ namespace ImageTextComparer
         private string? _lastExtractedText1;
         private string? _lastExtractedText2;
 
+        private bool _isRestoringHistory = false;
+
         private const string ConfigFileName = "config.json";
 
         public class AppConfig
@@ -53,6 +55,7 @@ namespace ImageTextComparer
             ApplyTheme();
             LoadConfig();
             AutoRestoreSession();
+            RefreshHistoryList();
         }
 
         #region Configuration Storage
@@ -624,6 +627,7 @@ namespace ImageTextComparer
 
                 TxtStatus.Text = "Đã so sánh xong!";
                 AutoSaveSession();
+                AddSessionToHistory();
             }
             catch (Exception ex)
             {
@@ -1113,6 +1117,142 @@ namespace ImageTextComparer
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Lỗi khi khôi phục phiên làm việc: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private string GetHistoryFolder()
+        {
+            string folder = System.IO.Path.Combine(GetAppDataFolder(), "History");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return folder;
+        }
+
+        private void AddSessionToHistory()
+        {
+            try
+            {
+                string folder = GetHistoryFolder();
+                string fileName = $"session_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+                string filePath = System.IO.Path.Combine(folder, fileName);
+
+                SaveSessionToFile(filePath);
+
+                // Cap the history at 20 items (delete oldest if exceeded)
+                var files = Directory.GetFiles(folder, "session_*.json");
+                if (files.Length > 20)
+                {
+                    Array.Sort(files);
+                    for (int i = 0; i < files.Length - 20; i++)
+                    {
+                        try { File.Delete(files[i]); } catch { }
+                    }
+                }
+
+                RefreshHistoryList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Không thể thêm lịch sử phiên: {ex.Message}");
+            }
+        }
+
+        public class HistoryItem
+        {
+            public string DisplayText { get; set; } = string.Empty;
+            public string FilePath { get; set; } = string.Empty;
+
+            public override string ToString() => DisplayText;
+        }
+
+        private void RefreshHistoryList()
+        {
+            try
+            {
+                LstHistory.SelectionChanged -= LstHistory_SelectionChanged; // Disable event triggers during list population
+                LstHistory.Items.Clear();
+
+                string folder = GetHistoryFolder();
+                if (!Directory.Exists(folder)) return;
+
+                var files = Directory.GetFiles(folder, "session_*.json");
+                // Sort chronologically (names match session_yyyyMMdd_HHmmss.json format)
+                Array.Sort(files);
+                Array.Reverse(files);
+
+                foreach (var file in files)
+                {
+                    string name = System.IO.Path.GetFileNameWithoutExtension(file);
+                    if (name.Length == 23 && name.StartsWith("session_"))
+                    {
+                        string dateStr = name.Substring(8);
+                        if (DateTime.TryParseExact(dateStr, "yyyyMMdd_HHmmss", null, System.Globalization.DateTimeStyles.None, out DateTime dt))
+                        {
+                            LstHistory.Items.Add(new HistoryItem
+                            {
+                                DisplayText = dt.ToString("yyyy-MM-dd HH:mm:ss"),
+                                FilePath = file
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Không thể tải danh sách lịch sử: {ex.Message}");
+            }
+            finally
+            {
+                LstHistory.SelectionChanged += LstHistory_SelectionChanged;
+            }
+        }
+
+        private void LstHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isRestoringHistory) return;
+            if (LstHistory.SelectedItem is HistoryItem item)
+            {
+                _isRestoringHistory = true;
+                try
+                {
+                    LoadSessionFromFile(item.FilePath);
+                    AutoSaveSession(); // Save as the last active session
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi khôi phục lịch sử: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    _isRestoringHistory = false;
+                }
+            }
+        }
+
+        private void BtnClearHistory_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("Bạn có chắc chắn muốn xóa toàn bộ lịch sử các phiên làm việc trước đó?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    string folder = GetHistoryFolder();
+                    if (Directory.Exists(folder))
+                    {
+                        var files = Directory.GetFiles(folder, "session_*.json");
+                        foreach (var file in files)
+                        {
+                            try { File.Delete(file); } catch { }
+                        }
+                    }
+                    RefreshHistoryList();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Không thể xóa lịch sử: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

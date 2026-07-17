@@ -240,7 +240,25 @@
                         <!-- PHIÊN LÀM VIỆC -->
                         <TextBlock Text="PHIÊN LÀM VIỆC" Foreground="{DynamicResource TextFg}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
                         <Button Content="Lưu phiên..." Style="{StaticResource ActionButton}" Click="BtnSaveSession_Click" Margin="0,0,0,10"/>
-                        <Button Content="Mở phiên..." Style="{StaticResource ActionButton}" Click="BtnLoadSession_Click"/>
+                        <Button Content="Mở phiên..." Style="{StaticResource ActionButton}" Click="BtnLoadSession_Click" Margin="0,0,0,20"/>
+
+                        <!-- LỊCH SỬ PHIÊN -->
+                        <TextBlock Text="LỊCH SỬ PHIÊN" Foreground="{DynamicResource TextFg}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <ListBox x:Name="LstHistory" Height="150" Margin="0,0,0,10" 
+                                 Background="{DynamicResource TextBoxBg}" 
+                                 BorderBrush="{DynamicResource TextBoxBorder}"
+                                 Foreground="{DynamicResource TextFg}"
+                                 SelectionChanged="LstHistory_SelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,4"/>
+                                    <Setter Property="Margin" Value="0,1"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                        <Button x:Name="BtnClearHistory" Content="Xóa lịch sử" Style="{StaticResource ActionButton}" Click="BtnClearHistory_Click"/>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
