@@ -1090,6 +1090,7 @@ namespace ImageTextComparer
                 string filePath = System.IO.Path.Combine(sessionFolder, fileName);
 
                 SaveSessionToFile(filePath);
+                AddSessionToHistory();
                 MessageBox.Show($"Lưu phiên làm việc thành công tại:\n{filePath}", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
