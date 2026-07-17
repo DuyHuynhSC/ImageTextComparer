@@ -1077,33 +1077,37 @@ namespace ImageTextComparer
                 return;
             }
 
-            var dialog = new SaveFileDialog
+            try
             {
-                Filter = "Session Files|*.json",
-                Title = "Lưu phiên làm việc",
-                FileName = "session_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".json"
-            };
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string sessionFolder = System.IO.Path.Combine(baseDir, "SavedSessions");
+                if (!Directory.Exists(sessionFolder))
+                {
+                    Directory.CreateDirectory(sessionFolder);
+                }
 
-            if (dialog.ShowDialog() == true)
+                string fileName = $"session_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+                string filePath = System.IO.Path.Combine(sessionFolder, fileName);
+
+                SaveSessionToFile(filePath);
+                MessageBox.Show($"Lưu phiên làm việc thành công tại:\n{filePath}", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
             {
-                try
-                {
-                    SaveSessionToFile(dialog.FileName);
-                    MessageBox.Show("Lưu phiên làm việc thành công!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Lỗi khi lưu phiên làm việc: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                MessageBox.Show($"Lỗi khi lưu phiên làm việc: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void BtnLoadSession_Click(object sender, RoutedEventArgs e)
         {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string sessionFolder = System.IO.Path.Combine(baseDir, "SavedSessions");
+
             var dialog = new OpenFileDialog
             {
                 Filter = "Session Files|*.json",
-                Title = "Mở phiên làm việc"
+                Title = "Mở phiên làm việc",
+                InitialDirectory = Directory.Exists(sessionFolder) ? sessionFolder : baseDir
             };
 
             if (dialog.ShowDialog() == true)
