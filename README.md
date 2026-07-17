@@ -2,29 +2,47 @@
 
 Ứng dụng desktop viết bằng C# WPF dùng để trích xuất văn bản từ hình ảnh bằng mô hình AI Vision (ví dụ: Qwen-VL, GPT-4o...) và tiến hành so sánh đối chiếu sự khác biệt giữa hai văn bản trực quan theo thời gian thực.
 
-## Các tính năng chính
+---
 
-1. **Chọn hoặc khoanh vùng ảnh bằng chuột**:
-   - Nhập ảnh gốc và ảnh đối chiếu từ trình duyệt tệp.
-   - Cho phép sử dụng chuột kéo thả trực tiếp trên ảnh để khoanh vùng (crop) phần chữ cần so sánh hoặc so sánh toàn bộ ảnh.
-2. **Trích xuất văn bản qua AI Vision**:
-   - Tích hợp chuẩn API OpenAI Chat Completions tương thích với các server hosted Vision Model (như Qwen2.5-VL hoặc Ollama, vLLM).
-   - Mã hóa ảnh tự động sang Base64 để gửi yêu cầu trích xuất đồng thời (parallel requests) tăng hiệu năng.
-3. **So sánh văn bản trực quan (Split-Diff)**:
-   - Thuật toán LCS (Longest Common Subsequence) so sánh từ-theo-từ (word-by-word) chính xác.
-   - Tô màu văn bản thay đổi: Màu đỏ (các từ bị xóa/khác ở ảnh 1) và màu xanh lá (các từ được thêm/thay thế ở ảnh 2).
-4. **Giao diện hiện đại**:
-   - Thiết kế Dark Mode cao cấp, tối giản, thanh cấu hình linh hoạt tự động lưu cấu hình cục bộ vào tệp `config.json`.
+## Các tính năng nổi bật & Cải tiến mới
+
+1. **Chụp ảnh màn hình dạng Snipping Tool (Đa màn hình & DPI-Aware)**:
+   - Ngoài việc chọn tệp ảnh sẵn có, bạn có thể bấm **Chụp ảnh...** để quét vùng màn hình trực tiếp (tương tự Snipping Tool của Windows).
+   - Hỗ trợ đầy đủ hệ thống **nhiều màn hình (Multi-monitor)** và tự động đồng bộ hóa tỉ lệ DPI của từng màn hình, đảm bảo ảnh chụp không bị mờ nhòe hay lệch toạ độ.
+   - Nhấn **ESC** để hủy chụp bất kỳ lúc nào.
+
+2. **Quản lý phiên làm việc & Lịch sử phiên (Session & History Log)**:
+   - **Tự động lưu/khôi phục (Auto-Save/Restore)**: Tự động lưu trạng thái làm việc gần nhất (hình ảnh, vùng khoanh chọn, chữ trích xuất, diff kết quả) để mở lại ngay khi khởi động ứng dụng.
+   - **Nhật ký Lịch sử (History Log)**: Hiển thị danh sách các phiên so sánh gần đây được lưu theo Ngày/Giờ ở thanh cấu hình bên trái. Chỉ cần click vào để mở lại ngay lập tức. Tự động giới hạn lưu tối đa 20 phiên để tối ưu bộ nhớ.
+   - **Nhập/Xuất phiên thủ công**: Cho phép lưu phiên đang làm việc thành tệp `.json` độc lập (mã hóa ảnh Base64 tự đóng gói) và mở lại trên bất kỳ máy tính nào.
+
+3. **Giao diện Sidebar Thu gọn (Dockable Sidebar)**:
+   - Thanh cấu hình bên trái có thể thu gọn (gập lại về chiều rộng bằng 0) hoặc mở rộng linh hoạt bằng nút bấm `◀` / `▶` giúp tối ưu diện tích so sánh hình ảnh.
+
+4. **Chế độ Sáng/Tối (Light & Dark Theme Switcher)**:
+   - Hỗ trợ đổi giao diện sáng/tối tức thời tại runtime. Ứng dụng khởi động mặc định ở giao diện **Sáng (Light theme)** dịu mắt.
+
+5. **So sánh ký tự tiếng Nhật chuẩn xác cao (Katakana Precision Diffing)**:
+   - Thuật toán so sánh được nâng cấp để tách nhỏ và đối chiếu từng ký tự CJK (đặc biệt phân biệt rõ nét các chữ Katakana dễ nhầm lẫn như `バス` - basu và `パス` - pasu).
+
+6. **Tự động Phóng to ảnh nhỏ (Nearest Neighbor Upscaling)**:
+   - Khi khoanh vùng chữ nhỏ (chiều cao dưới 300px), ứng dụng tự động upscale ảnh bằng bộ lọc Nearest Neighbor chất lượng cao trước khi gửi lên AI nhằm tối ưu hóa độ sắc nét của điểm ảnh giúp AI nhận dạng chính xác hơn.
+
+7. **Bỏ qua xác thực SSL tự ký (Bypass SSL)**:
+   - Cho phép tùy chọn bỏ qua kiểm tra chứng chỉ SSL (`Bỏ qua xác thực SSL (tự ký)`) đối với các server API chạy cục bộ hoặc trong mạng nội bộ doanh nghiệp.
+
+8. **Mở thư mục chẩn đoán nhanh (Diagnostics Folder)**:
+   - Nút **Mở thư mục chẩn đoán** giúp bạn mở nhanh thư mục chứa tệp cấu hình, tệp debug ảnh cắt (`crop_debug_1.png`, `crop_debug_2.png`), tệp session và lịch sử làm việc.
 
 ---
 
 ## Kiến trúc mã nguồn
 
 Dự án gồm các thành phần cốt lõi:
-- **`MainWindow.xaml` / `MainWindow.xaml.cs`**: Giao diện và xử lý sự kiện tương tác chuột để vẽ vùng chọn, tính toán ánh xạ tọa độ pixel thực tế của ảnh gốc.
-- **`DiffEngine.cs`**: Engine phân tích sự khác biệt (diff) giữa 2 chuỗi ký tự bằng thuật toán LCS.
-- **`VisionApiService.cs`**: Dịch vụ giao tiếp HTTP gọi mô hình AI trích xuất văn bản từ hình ảnh.
-- **`RichTextBoxHelper.cs`**: Hỗ trợ hiển thị và định dạng văn bản màu sắc vào khung kết quả RichTextBox.
+- [MainWindow.xaml](file:///D:/Dev/Source%20Code/ImageTextComparer/MainWindow.xaml) / [MainWindow.xaml.cs](file:///D:/Dev/Source%20Code/ImageTextComparer/MainWindow.xaml.cs): Giao diện chính, xử lý tương tác kéo thả chuột, tính toán tỉ lệ tọa độ, chụp ảnh đa màn hình, lưu/khôi phục session và nhật ký lịch sử.
+- [DiffEngine.cs](file:///D:/Dev/Source%20Code/ImageTextComparer/DiffEngine.cs): Engine so sánh chuỗi ký tự dựa trên thuật toán LCS (Longest Common Subsequence), hỗ trợ phân tách CJK.
+- [VisionApiService.cs](file:///D:/Dev/Source%20Code/ImageTextComparer/VisionApiService.cs): Gửi dữ liệu ảnh Base64 bất đồng bộ lên Vision API Gateway của Fujinet hoặc các host tương thích OpenAI.
+- [RichTextBoxHelper.cs](file:///D:/Dev/Source%20Code/ImageTextComparer/RichTextBoxHelper.cs): Định dạng highlight màu đỏ (xóa) và xanh lá (thêm mới) bằng các thẻ `Span` bọc trong `Run` để hiển thị trực quan lỗi khác biệt.
 
 ---
 
@@ -40,7 +58,7 @@ Dự án gồm các thành phần cốt lõi:
    ```powershell
    cd "D:\Dev\Source Code\ImageTextComparer"
    ```
-3. Chạy lệnh xây dựng và khởi chạy dự án:
+3. Khởi chạy ứng dụng:
    ```powershell
    dotnet run
    ```
@@ -49,8 +67,8 @@ Dự án gồm các thành phần cốt lõi:
 
 ## Cấu hình AI Host
 
-Tại bảng điều khiển bên trái ứng dụng, bạn cần cấu hình các thông số phù hợp với server AI nội bộ:
-- **API Endpoint URL**: URL của endpoint chat completions hỗ trợ vision (ví dụ: `http://localhost:11434/v1/chat/completions` của Ollama hoặc cổng vLLM doanh nghiệp).
+Tại bảng điều khiển bên trái ứng dụng, cấu hình các thông số phù hợp với server AI:
+- **API Endpoint URL**: URL của endpoint chat completions hỗ trợ vision (mặc định trỏ đến Gateway Fujinet: `https://models-gateway.fujinet.net/v1/chat/completions`).
 - **API Key**: Mã khóa API nếu server yêu cầu bảo mật.
-- **Model Name**: Tên model vision đang chạy trên host (ví dụ: `qwen2.5-vl`).
-- **AI Prompt**: Lời nhắc yêu cầu AI thực hiện trích xuất văn bản (đã có sẵn lời nhắc mặc định tiếng Việt tối ưu).
+- **Model Name**: Tên model vision đang chạy trên host (mặc định: `programmer`).
+- **AI Prompt**: Lời nhắc yêu cầu AI thực hiện trích xuất chữ thô cách nhau bằng khoảng trắng dạng trung lập `"A B C D E"`, ngăn ngừa lỗi tự sửa chính tả theo ngữ cảnh của mô hình.
